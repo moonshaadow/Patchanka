@@ -1,4 +1,4 @@
-# Makefile pour compiler le wrapper C de Patchanka.
+# Makefile to build the Patchanka C wrapper.
 
 CC      ?= cc
 CFLAGS  ?= -O2 -fPIC -Wall -Wextra

@@ -1,4 +1,4 @@
-"""Gestionnaire Patchanka : branche le moteur PipeWire sur HP."""
+"""Patchanka manager: plugs the PipeWire engine onto HP."""
 
 import logging
 from pathlib import Path
@@ -15,44 +15,44 @@ _logger = logging.getLogger(__name__)
 
 
 class PipeWireStatusEmitter(QObject):
-    """Emetteur de signal pour le statut PipeWire.
+    """Signal emitter for the PipeWire status.
 
-    PatchankaManager n'herite pas de QObject, donc on utilise ce
-    petit objet intermediaire pour emettre le signal.
+    PatchankaManager does not inherit from QObject, so we use this
+    small intermediate object to emit the signal.
     """
-    status_changed = Signal(bool)  # True = connecte, False = arrete
+    status_changed = Signal(bool)  # True = connected, False = stopped
 
 
 class PatchankaManager(PatchbayManager, PatchEngineOuter):
-    """PatchbayManager specialise pour PipeWire."""
+    """PatchbayManager specialized for PipeWire."""
 
     def __init__(self, settings):
         super().__init__(settings)
 
-        # Attribut attendu par HP mais non initialise par defaut
+        # Attribute expected by HP but not initialized by default
         self.canvas_menu = None
 
-        # Configuration Patchanka
+        # Patchanka configuration
         self.config = PatchankaConfig(settings)
 
-        # Emetteur de signal pour le statut PipeWire
+        # Signal emitter for the PipeWire status
         self._pw_status_emitter = PipeWireStatusEmitter()
 
-        # Moteur PipeWire
+        # PipeWire engine
         self._engine = PipeWireEngine(
             client_name="patchanka",
             config=self.config,
             pretty_tmp_path=Path("/tmp/patchanka_pretty_names.json"),
             auto_export_pretty_names=False)
 
-        # Timer pour consommer la queue d'evenements PipeWire
+        # Timer to consume the PipeWire event queue
         self._pw_events_timer = QTimer()
         self._pw_events_timer.setInterval(50)
         self._pw_events_timer.timeout.connect(
             lambda: self._process_pw_events())
 
     # ------------------------------------------------------------------
-    # Cycle de vie
+    # Lifecycle
     # ------------------------------------------------------------------
 
     def start_engine(self):
@@ -67,32 +67,32 @@ class PatchankaManager(PatchbayManager, PatchEngineOuter):
         try:
             self._engine.process_patch_events()
         except Exception:
-            _logger.exception("Erreur dans process_patch_events")
+            _logger.exception("Error in process_patch_events")
 
         if not self._engine.patch_event_queue.empty():
             try:
                 self._engine.process_patch_events()
             except Exception:
-                _logger.exception("Erreur dans process_patch_events (2)")
+                _logger.exception("Error in process_patch_events (2)")
 
     def apply_patchanka_options(self):
-        """Applique les options apres modification."""
+        """Apply the options after modification."""
         self._engine.set_hide_monitor_ports(
             self.config.hide_monitor_ports)
 
     def reload_custom_names(self):
-        """Recharge les noms personnalises et rafraichit le graphe."""
+        """Reload custom names and refresh the graph."""
         self._engine.reload_custom_names()
 
     def connect_pipewire_status(self, callback):
-        """Connecte un callback appele quand le statut change.
+        """Connect a callback that is called when the status changes.
 
-        Le callback recoit un booleen : True = connecte, False = arrete.
+        The callback receives a boolean: True = connected, False = stopped.
         """
         self._pw_status_emitter.status_changed.connect(callback)
 
     # ------------------------------------------------------------------
-    # Implementation de PatchEngineOuter
+    # PatchEngineOuter implementation
     # ------------------------------------------------------------------
 
     def can_leave(self) -> bool:
@@ -105,7 +105,7 @@ class PatchankaManager(PatchbayManager, PatchEngineOuter):
         pass
 
     def is_now_ready(self):
-        _logger.info("PipeWire engine pret")
+        _logger.info("PipeWire engine ready")
 
     def associate_client_name_and_uuid(self, client_name: str, uuid: int):
         self.set_group_uuid_from_name(client_name, uuid)
@@ -142,12 +142,12 @@ class PatchankaManager(PatchbayManager, PatchEngineOuter):
 
     def server_stopped(self):
         super().server_stopped()
-        # Emettre le signal de statut : deconnecte
+        # Emit the status signal: disconnected
         self._pw_status_emitter.status_changed.emit(False)
 
     def server_started(self):
         super().server_started()
-        # Emettre le signal de statut : connecte
+        # Emit the status signal: connected
         self._pw_status_emitter.status_changed.emit(True)
 
     def send_transport_position(self, tpos):
@@ -178,7 +178,7 @@ class PatchankaManager(PatchbayManager, PatchEngineOuter):
         pass
 
     # ------------------------------------------------------------------
-    # Redefinitions de PatchbayManager
+    # PatchbayManager overrides
     # ------------------------------------------------------------------
 
     def refresh(self):

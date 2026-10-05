@@ -1,10 +1,10 @@
 /* patchanka_pw.c
  *
- * Wrapper C minimal exposant les fonctions PipeWire nécessaires
- * à Patchanka que ctypes ne peut pas appeler directement
- * (fonctions static inline dans les en-têtes PipeWire).
+ * Minimal C wrapper exposing the PipeWire functions needed by
+ * Patchanka that ctypes cannot call directly (static inline
+ * functions in the PipeWire headers).
  *
- * Compilation :
+ * Build:
  *   make -C native
  */
 
@@ -17,7 +17,7 @@
 
 
 /* ====================================================================
- * Registry : création
+ * Registry: creation
  * ==================================================================== */
 
 struct pw_registry *patchanka_get_registry(struct pw_core *core)
@@ -27,7 +27,7 @@ struct pw_registry *patchanka_get_registry(struct pw_core *core)
 
 
 /* ====================================================================
- * Registry : listener
+ * Registry: listener
  * ==================================================================== */
 
 typedef void (*patchanka_global_cb_t)(
@@ -88,7 +88,7 @@ int patchanka_registry_add_listener(
 
 
 /* ====================================================================
- * Core : listeners (diagnostic + detection de deconnexion)
+ * Core: listeners (diagnostic + disconnection detection)
  * ==================================================================== */
 
 typedef void (*patchanka_core_error_cb_t)(
@@ -149,7 +149,7 @@ void patchanka_add_core_listener(struct pw_core *core)
 
 
 /* ====================================================================
- * Binding sur un noeud et lecture de ses proprietes completes
+ * Binding on a node and reading its complete properties
  * ==================================================================== */
 
 typedef void (*patchanka_node_info_cb_t)(
@@ -199,7 +199,7 @@ struct spa_hook *patchanka_node_add_listener(struct pw_proxy *proxy)
 
 
 /* ====================================================================
- * Création de lien
+ * Link creation
  * ==================================================================== */
 
 struct pw_proxy *patchanka_create_link(struct pw_core *core,
@@ -234,7 +234,7 @@ struct pw_proxy *patchanka_create_link(struct pw_core *core,
 
 
 /* ====================================================================
- * Destruction de lien
+ * Link destruction
  * ==================================================================== */
 
 int patchanka_destroy_link(struct pw_registry *registry, uint32_t link_id)
@@ -244,7 +244,7 @@ int patchanka_destroy_link(struct pw_registry *registry, uint32_t link_id)
 
 
 /* ====================================================================
- * Destruction de proxy
+ * Proxy destruction
  * ==================================================================== */
 
 void patchanka_destroy_proxy(struct pw_proxy *proxy)
@@ -255,7 +255,7 @@ void patchanka_destroy_proxy(struct pw_proxy *proxy)
 
 
 /* ====================================================================
- * Version de la bibliothèque (debug)
+ * Library version (debug)
  * ==================================================================== */
 
 const char *patchanka_version(void)

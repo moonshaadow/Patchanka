@@ -1,11 +1,12 @@
-"""Adaptateur entre les concepts PipeWire et l'interface de HoustonPatchbay.
+"""Adapter between PipeWire concepts and the HoustonPatchbay interface.
 
-HP utilise plusieurs types de donnees qui portent des noms historiquement
-herites de JACK. Ces noms et valeurs sont internes a HP et n'ont aucune
-dependance technique a JACK. Ils constituent le vocabulaire que HP attend
-pour afficher correctement le graphe.
+HP uses several data types whose names are historically inherited
+from JACK. These names and values are internal to HP and have no
+technical dependency on JACK. They form the vocabulary that HP
+expects in order to display the graph correctly.
 
-Ce module centralise la conversion des donnees PipeWire vers ces valeurs.
+This module centralizes the conversion of PipeWire data into these
+values.
 """
 
 from enum import IntFlag
@@ -14,11 +15,11 @@ from patshared import PortType, PortSubType
 
 
 # ======================================================================
-# Flags attendus par HP dans PortData.flags
+# Flags expected by HP in PortData.flags
 # ======================================================================
 
 class HpPortFlags(IntFlag):
-    """Flags attendus par HP dans le champ PortData.flags."""
+    """Flags expected by HP in the PortData.flags field."""
     INPUT    = 0x1
     OUTPUT   = 0x2
     PHYSICAL = 0x4
@@ -27,7 +28,7 @@ class HpPortFlags(IntFlag):
 
 
 # ======================================================================
-# Conversion media.class -> PortType HP
+# media.class -> HP PortType conversion
 # ======================================================================
 
 _MEDIA_CLASS_TO_PORT_TYPE = {
@@ -46,12 +47,12 @@ _MEDIA_CLASS_TO_PORT_TYPE = {
 
 
 def media_class_to_port_type(media_class: str) -> PortType:
-    """Convertit media.class PipeWire en PortType HP."""
+    """Convert a PipeWire media.class into an HP PortType."""
     return _MEDIA_CLASS_TO_PORT_TYPE.get(media_class, PortType.AUDIO_JACK)
 
 
 # ======================================================================
-# Categorisation des noeuds
+# Node categorization
 # ======================================================================
 
 _HARDWARE_MEDIA_CLASS_PREFIXES = (
@@ -76,21 +77,21 @@ _FILTER_FACTORY_NAMES = (
 
 
 def is_hardware_media_class(media_class: str) -> bool:
-    """Determine si un media.class correspond a un peripherique materiel."""
+    """Determine whether a media.class matches a hardware device."""
     if not media_class:
         return False
     return media_class.startswith(_HARDWARE_MEDIA_CLASS_PREFIXES)
 
 
 def is_application_media_class(media_class: str) -> bool:
-    """Determine si un media.class correspond a un flux applicatif."""
+    """Determine whether a media.class matches an application stream."""
     if not media_class:
         return False
     return media_class.startswith(_APPLICATION_MEDIA_CLASS_PREFIXES)
 
 
 def is_filter_node(media_class: str, props: dict) -> bool:
-    """Determine si un noeud correspond a un filtre PipeWire."""
+    """Determine whether a node matches a PipeWire filter."""
     factory_name = props.get("factory.name", "")
     if factory_name in _FILTER_FACTORY_NAMES:
         return True
@@ -100,9 +101,9 @@ def is_filter_node(media_class: str, props: dict) -> bool:
 
 
 def categorize_node(media_class: str, props: dict) -> str:
-    """Retourne la categorie d'un noeud PipeWire.
+    """Return the category of a PipeWire node.
 
-    Categories : 'filter', 'device', 'application', 'other'.
+    Categories: 'filter', 'device', 'application', 'other'.
     """
     if is_filter_node(media_class, props):
         return "filter"
@@ -114,14 +115,14 @@ def categorize_node(media_class: str, props: dict) -> str:
 
 
 # ======================================================================
-# Calcul des flags HP pour un port
+# Compute HP flags for a port
 # ======================================================================
 
 def port_flags(
         direction: str,
         is_hardware: bool,
         port_name: str = "") -> int:
-    """Calcule les flags HP pour un port PipeWire."""
+    """Compute HP flags for a PipeWire port."""
     flags = HpPortFlags.INPUT if direction == "in" else HpPortFlags.OUTPUT
 
     if is_hardware:
@@ -134,30 +135,30 @@ def port_flags(
 
 
 # ======================================================================
-# Sous-type de port
+# Port subtype
 # ======================================================================
 
 def port_subtype(node_name: str, port_type: PortType) -> PortSubType:
-    """Retourne le sous-type HP d'un port."""
+    """Return the HP subtype of a port."""
     if node_name.startswith(("Midi-Bridge", "a2j")):
         return PortSubType.A2J
     return PortSubType.REGULAR
 
 
 # ======================================================================
-# Nom d'affichage d'un noeud
+# Node display name
 # ======================================================================
 
 def node_display_name(
         props: dict,
         custom_names: dict | None = None) -> str:
-    """Determine le nom d'affichage d'un noeud.
+    """Determine the display name of a node.
 
-    Ordre de priorite :
-    1. Nom personnalise de Patchanka (custom_names)
-    2. node.description (nom lisible fourni par PipeWire)
-    3. node.nick (surnom court, s'il existe)
-    4. node.name (identifiant technique)
+    Priority order:
+    1. Patchanka custom name (custom_names)
+    2. node.description (readable name provided by PipeWire)
+    3. node.nick (short nickname, if present)
+    4. node.name (technical identifier)
     """
     node_name = props.get("node.name", "")
 
@@ -172,23 +173,22 @@ def node_display_name(
     if nick:
         return nick
 
-    return node_name or "inconnu"
-
+    return node_name or "unknown"
 
 
 def is_midi_port(port_props: dict, node_media_class: str = "") -> bool:
-    """Determine si un port PipeWire est un port MIDI.
+    """Determine whether a PipeWire port is a MIDI port.
 
-    Le critere le plus fiable est format.dsp :
-    - "8 bit raw midi" pour les ports MIDI
-    - autre valeur pour les ports audio/video
+    The most reliable criterion is format.dsp:
+    - "8 bit raw midi" for MIDI ports
+    - another value for audio/video ports
     """
-    # 1. format.dsp (critere principal)
+    # 1. format.dsp (main criterion)
     format_dsp = port_props.get("format.dsp", "").lower()
     if "midi" in format_dsp:
         return True
 
-    # 2. media.class du noeud parent
+    # 2. parent node media.class
     if "Midi" in node_media_class or "midi" in node_media_class.lower():
         return True
 

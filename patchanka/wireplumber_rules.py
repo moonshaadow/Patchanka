@@ -1,11 +1,10 @@
-"""Gestion des regles de renommage Lua pour WirePlumber.
+"""Management of WirePlumber Lua rename rules.
 
-Patchanka stocke les noms personnalises sous forme de regles Lua
-dans un fichier dedie, avec un marqueur permettant de les identifier
-et de les supprimer proprement.
+Patchanka stores custom names as Lua rules in a dedicated file,
+with a marker allowing them to be identified and cleanly removed.
 
-Emplacement : ~/.config/wireplumber/wireplumber.conf.d/
-Nom du fichier : 99-patchanka-rename.conf
+Location: ~/.config/wireplumber/wireplumber.conf.d/
+File name: 99-patchanka-rename.conf
 """
 
 import logging
@@ -21,18 +20,18 @@ _FORMAT_VERSION = "1"
 
 
 def _config_dir() -> Path:
-    """Retourne le dossier de configuration WirePlumber utilisateur."""
+    """Return the user WirePlumber configuration directory."""
     xdg_config = Path.home() / ".config"
     return xdg_config / "wireplumber" / "wireplumber.conf.d"
 
 
 def _config_file() -> Path:
-    """Retourne le chemin du fichier de regles Patchanka."""
+    """Return the path to the Patchanka rules file."""
     return _config_dir() / _CONFIG_FILE_NAME
 
 
 def _escape_lua_string(value: str) -> str:
-    """Echappe une chaine pour inclusion dans une string Lua."""
+    """Escape a string for inclusion in a Lua string."""
     return (value
             .replace("\\", "\\\\")
             .replace('"', '\\"')
@@ -40,7 +39,7 @@ def _escape_lua_string(value: str) -> str:
 
 
 def _parse_rules(content: str) -> dict[str, str]:
-    """Parse le fichier de regles et retourne {node_name: display_name}."""
+    """Parse the rules file and return {node_name: display_name}."""
     result: dict[str, str] = {}
 
     pattern = re.compile(
@@ -61,7 +60,7 @@ def _parse_rules(content: str) -> dict[str, str]:
 
 
 def load_rules() -> dict[str, str]:
-    """Charge les regles Patchanka depuis le fichier."""
+    """Load the Patchanka rules from the file."""
     path = _config_file()
     if not path.is_file():
         return {}
@@ -69,20 +68,20 @@ def load_rules() -> dict[str, str]:
     try:
         content = path.read_text(encoding="utf-8")
     except Exception:
-        _logger.exception(f"Lecture impossible : {path}")
+        _logger.exception(f"Read failed: {path}")
         return {}
 
     return _parse_rules(content)
 
 
 def _build_file_content(rules: dict[str, str]) -> str:
-    """Construit le contenu complet du fichier de regles."""
+    """Build the complete content of the rules file."""
     lines = [
-        "# Regles de renommage creees par Patchanka.",
-        f"# Format : {_FORMAT_VERSION}",
+        "# Rename rules created by Patchanka.",
+        f"# Format: {_FORMAT_VERSION}",
         "#",
-        "# Ce fichier est gere automatiquement.",
-        "# Ne pas editer manuellement sauf si vous savez ce que vous faites.",
+        "# This file is managed automatically.",
+        "# Do not edit manually unless you know what you are doing.",
         "",
         "monitor.alsa.rules = [",
     ]
@@ -112,26 +111,26 @@ def _build_file_content(rules: dict[str, str]) -> str:
 
 
 def save_rules(rules: dict[str, str]):
-    """Ecrit les regles dans le fichier de configuration."""
+    """Write the rules to the configuration file."""
     path = _config_file()
 
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
-        _logger.exception(f"Impossible de creer {path.parent}")
+        _logger.exception(f"Failed to create {path.parent}")
         return
 
     content = _build_file_content(rules)
 
     try:
         path.write_text(content, encoding="utf-8")
-        _logger.info(f"Regles Patchanka sauvegardees : {path}")
+        _logger.info(f"Patchanka rules saved: {path}")
     except Exception:
-        _logger.exception(f"Ecriture impossible : {path}")
+        _logger.exception(f"Write failed: {path}")
 
 
 def set_custom_name(node_name: str, display_name: str):
-    """Ajoute ou met a jour le nom personnalise d'un noeud."""
+    """Add or update a node custom name."""
     rules = load_rules()
 
     if display_name:
@@ -143,18 +142,18 @@ def set_custom_name(node_name: str, display_name: str):
 
 
 def remove_custom_name(node_name: str):
-    """Supprime le nom personnalise d'un noeud."""
+    """Remove a node custom name."""
     rules = load_rules()
     rules.pop(node_name, None)
     save_rules(rules)
 
 
 def clear_all_rules():
-    """Supprime toutes les regles creees par Patchanka."""
+    """Remove all rules created by Patchanka."""
     path = _config_file()
     if path.is_file():
         try:
             path.unlink()
-            _logger.info(f"Fichier de regles supprime : {path}")
+            _logger.info(f"Rules file deleted: {path}")
         except Exception:
-            _logger.exception(f"Suppression impossible : {path}")
+            _logger.exception(f"Delete failed: {path}")

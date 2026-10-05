@@ -1,8 +1,8 @@
-"""Dialogue de configuration du canvas.
+"""Canvas configuration dialog.
 
-Remplace le CanvasOptionsDialog de HP. On garde la mise en forme
-generale (onglets General, Naming, Theme) mais on utilise nos
-propres methodes la ou c'est necessaire.
+Replaces HP's CanvasOptionsDialog. We keep the general layout
+(General, Naming, Theme tabs) but use our own methods where
+necessary.
 """
 
 import logging
@@ -21,21 +21,21 @@ _logger = logging.getLogger(__name__)
 
 
 # ======================================================================
-# Lecture / ecriture des options HP
+# Reading / writing HP options
 # ======================================================================
 
 def _get_hp_options():
-    """Importe l'objet global `options` de HP."""
+    """Import HP's global `options` object."""
     from patchbay.patchcanvas.init_values import options as hp_options
     return hp_options
 
 
 # ======================================================================
-# Onglet General
+# General tab
 # ======================================================================
 
 class _GeneralTab(QWidget):
-    """Options generales du canvas."""
+    """General canvas options."""
 
     def __init__(self, manager):
         super().__init__()
@@ -44,15 +44,15 @@ class _GeneralTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        # --- Affichage ---
-        group_display = QGroupBox("Affichage")
+        # --- Display ---
+        group_display = QGroupBox("Display")
         display_layout = QVBoxLayout(group_display)
 
-        self._cb_shadows = QCheckBox("Ombres des boites")
-        self._cb_auto_select = QCheckBox("Selection automatique")
-        self._cb_elastic = QCheckBox("Canvas elastique")
-        self._cb_borders_nav = QCheckBox("Navigation par bords")
-        self._cb_prevent_overlap = QCheckBox("Empecher le chevauchement")
+        self._cb_shadows = QCheckBox("Box shadows")
+        self._cb_auto_select = QCheckBox("Automatic selection")
+        self._cb_elastic = QCheckBox("Elastic canvas")
+        self._cb_borders_nav = QCheckBox("Border navigation")
+        self._cb_prevent_overlap = QCheckBox("Prevent overlap")
 
         try:
             opts = _get_hp_options()
@@ -67,7 +67,7 @@ class _GeneralTab(QWidget):
             self._cb_prevent_overlap.setChecked(
                 getattr(opts, 'prevent_overlap', True))
         except Exception:
-            _logger.exception("Impossible de lire les options HP")
+            _logger.exception("Failed to read HP options")
 
         display_layout.addWidget(self._cb_shadows)
         display_layout.addWidget(self._cb_auto_select)
@@ -82,20 +82,19 @@ class _GeneralTab(QWidget):
         pw_layout = QVBoxLayout(group_pw)
 
         self._cb_hide_monitor = QCheckBox(
-            "Masquer les ports de monitoring (monitor_*)")
+            "Hide monitoring ports (monitor_*)")
         self._cb_hide_monitor.setChecked(
             self._config.hide_monitor_ports)
         self._cb_hide_monitor.setToolTip(
-            "PipeWire ajoute automatiquement des ports de monitoring\n"
-            "aux noeuds qui ont des entrees. Ces ports permettent de\n"
-            "capturer ce qui entre dans le noeud, mais encombrent le\n"
-            "patchbay visuel.")
+            "PipeWire automatically adds monitoring ports to nodes\n"
+            "that have inputs. These ports allow capturing what\n"
+            "enters the node, but they clutter the visual patchbay.")
         pw_layout.addWidget(self._cb_hide_monitor)
 
         layout.addWidget(group_pw)
 
-        # --- Grille ---
-        group_grid = QGroupBox("Grille")
+        # --- Grid ---
+        group_grid = QGroupBox("Grid")
         grid_layout = QFormLayout(group_grid)
 
         self._combo_grid = QComboBox()
@@ -103,10 +102,10 @@ class _GeneralTab(QWidget):
             from patchbay.patchcanvas.init_values import GridStyle
             for style in GridStyle:
                 label = {
-                    "NONE": "Aucune",
-                    "TECHNICAL_GRID": "Grille technique",
-                    "GRID": "Grille",
-                    "CHESSBOARD": "Damier",
+                    "NONE": "None",
+                    "TECHNICAL_GRID": "Technical grid",
+                    "GRID": "Grid",
+                    "CHESSBOARD": "Chessboard",
                 }.get(style.name, style.name)
                 self._combo_grid.addItem(label, style)
 
@@ -118,13 +117,13 @@ class _GeneralTab(QWidget):
             except Exception:
                 pass
         except Exception:
-            _logger.exception("GridStyle indisponible")
+            _logger.exception("GridStyle unavailable")
 
-        grid_layout.addRow("Style :", self._combo_grid)
+        grid_layout.addRow("Style:", self._combo_grid)
 
         layout.addWidget(group_grid)
 
-        # --- Zoom par defaut ---
+        # --- Default zoom ---
         group_zoom = QGroupBox("Zoom")
         zoom_layout = QFormLayout(group_zoom)
 
@@ -137,15 +136,15 @@ class _GeneralTab(QWidget):
                 int(getattr(opts, 'default_zoom', 100)))
         except Exception:
             self._spin_zoom.setValue(100)
-        zoom_layout.addRow("Zoom par defaut :", self._spin_zoom)
+        zoom_layout.addRow("Default zoom:", self._spin_zoom)
 
         layout.addWidget(group_zoom)
 
         layout.addStretch()
 
     def apply(self):
-        """Applique les changements."""
-        # --- Options HP ---
+        """Apply the changes."""
+        # --- HP options ---
         try:
             opts = _get_hp_options()
             opts.show_shadows = self._cb_shadows.isChecked()
@@ -156,22 +155,22 @@ class _GeneralTab(QWidget):
             opts.grid_style = self._combo_grid.currentData()
             opts.default_zoom = self._spin_zoom.value()
         except Exception:
-            _logger.exception("Impossible d'ecrire les options HP")
+            _logger.exception("Failed to write HP options")
 
-        # --- Options Patchanka (PipeWire) ---
+        # --- Patchanka options (PipeWire) ---
         hide_before = self._config.hide_monitor_ports
         self._config.hide_monitor_ports = \
             self._cb_hide_monitor.isChecked()
 
-        # Si l'option a change, rafraichir le moteur
+        # If the option changed, refresh the engine
         if hide_before != self._config.hide_monitor_ports:
             try:
                 self._mng.apply_patchanka_options()
             except Exception:
                 _logger.exception(
-                    "Erreur lors du rafraichissement PipeWire")
+                    "Error while refreshing PipeWire")
 
-        # --- Signaux HP ---
+        # --- HP signals ---
         try:
             self._mng.sg.group_shadows_changed.emit(
                 int(self._cb_shadows.isChecked()))
@@ -186,14 +185,14 @@ class _GeneralTab(QWidget):
             self._mng.sg.default_zoom_changed.emit(
                 self._spin_zoom.value())
         except Exception:
-            _logger.exception("Impossible d'emettre les signaux")
+            _logger.exception("Failed to emit signals")
 
 # ======================================================================
-# Onglet Nommage
+# Naming tab
 # ======================================================================
 
 class _NamingTab(QWidget):
-    """Options de nommage."""
+    """Naming options."""
 
     def __init__(self, manager):
         super().__init__()
@@ -201,7 +200,7 @@ class _NamingTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        group_naming = QGroupBox("Sources des noms")
+        group_naming = QGroupBox("Name sources")
         naming_layout = QVBoxLayout(group_naming)
 
         self._cb_custom = QCheckBox("Custom names")
@@ -217,9 +216,9 @@ class _NamingTab(QWidget):
         layout.addWidget(group_naming)
 
         note = QLabel(
-            "PipeWire fournit le nom d'affichage via node.description.\n"
-            "Les noms personnalises de Patchanka (regles WirePlumber)\n"
-            "sont prioritaires sur ce nom.")
+            "PipeWire provides the display name via node.description.\n"
+            "Patchanka custom names (WirePlumber rules) take priority\n"
+            "over this name.")
         note.setStyleSheet("color: gray; font-style: italic;")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -236,11 +235,11 @@ class _NamingTab(QWidget):
 
 
 # ======================================================================
-# Onglet Theme
+# Theme tab
 # ======================================================================
 
 class _ThemeTab(QWidget):
-    """Selection et gestion des themes."""
+    """Theme selection and management."""
 
     def __init__(self, manager):
         super().__init__()
@@ -248,7 +247,7 @@ class _ThemeTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        group_theme = QGroupBox("Theme actif")
+        group_theme = QGroupBox("Active theme")
         theme_layout = QVBoxLayout(group_theme)
 
         self._combo_theme = QComboBox()
@@ -257,11 +256,11 @@ class _ThemeTab(QWidget):
 
         btn_layout = QHBoxLayout()
 
-        self._btn_duplicate = QPushButton("Dupliquer...")
+        self._btn_duplicate = QPushButton("Duplicate...")
         self._btn_duplicate.clicked.connect(self._duplicate_theme)
         btn_layout.addWidget(self._btn_duplicate)
 
-        self._btn_edit = QPushButton("Editer...")
+        self._btn_edit = QPushButton("Edit...")
         self._btn_edit.clicked.connect(self._edit_theme)
         btn_layout.addWidget(self._btn_edit)
 
@@ -276,25 +275,25 @@ class _ThemeTab(QWidget):
         layout.addStretch()
 
     def _load_theme_list(self):
-        """Charge la liste des themes via l'API publique de patchcanvas."""
+        """Load the theme list via patchcanvas's public API."""
         self._combo_theme.clear()
         self._theme_list = []
 
         try:
             from patchbay.patchcanvas import patchcanvas
 
-            # list_themes() retourne list[ThemeData]
-            # ThemeData.ref_id = nom du dossier
-            # ThemeData.name   = nom affiche (potentiellement traduit)
+            # list_themes() returns list[ThemeData]
+            # ThemeData.ref_id = folder name
+            # ThemeData.name   = displayed name (potentially translated)
             theme_data_list = patchcanvas.list_themes()
 
             for theme_data in theme_data_list:
                 self._theme_list.append(theme_data)
-                # Afficher le nom lisible, stocker le ref_id (dossier)
+                # Display the readable name, store the ref_id (folder)
                 self._combo_theme.addItem(
                     theme_data.name, theme_data.ref_id)
 
-            # get_theme() retourne le nom du dossier du theme actuel
+            # get_theme() returns the folder name of the current theme
             current_ref = patchcanvas.get_theme()
             if current_ref:
                 self._current_theme_ref = current_ref
@@ -304,10 +303,10 @@ class _ThemeTab(QWidget):
 
             self._update_edit_button()
         except Exception:
-            _logger.exception("Impossible de charger les themes")
+            _logger.exception("Failed to load themes")
 
     def _update_edit_button(self):
-        """Active le bouton Editer si le theme est editable."""
+        """Enable the Edit button if the theme is editable."""
         idx = self._combo_theme.currentIndex()
         if 0 <= idx < len(self._theme_list):
             editable = self._theme_list[idx].editable
@@ -320,18 +319,18 @@ class _ThemeTab(QWidget):
         if not theme_ref or theme_ref == self._current_theme_ref:
             return
 
-        # Emettre le signal theme_changed : le manager HP a un slot
-        # connecte (PatchbayManager.change_theme) qui reconstruit
-        # le canvas avec le nouveau theme.
-        # Le ref_id est le nom du dossier, ce que HP attend.
+        # Emit the theme_changed signal: the HP manager has a
+        # connected slot (PatchbayManager.change_theme) that rebuilds
+        # the canvas with the new theme.
+        # The ref_id is the folder name, which HP expects.
         self._mng.sg.theme_changed.emit(theme_ref)
         self._current_theme_ref = theme_ref
         self._update_edit_button()
 
     def _duplicate_theme(self):
         name, ok = QInputDialog.getText(
-            self, "Nouveau theme",
-            "Nom du nouveau theme :",
+            self, "New theme",
+            "Name of the new theme:",
             QLineEdit.EchoMode.Normal, "")
         if not ok or not name:
             return
@@ -341,12 +340,12 @@ class _ThemeTab(QWidget):
             err = patchcanvas.copy_and_load_current_theme(name)
             if err:
                 QMessageBox.warning(
-                    self, "Erreur",
-                    "La copie du theme a echoue.")
+                    self, "Error",
+                    "Theme copy failed.")
             else:
                 self._load_theme_list()
         except Exception:
-            _logger.exception("Impossible de dupliquer le theme")
+            _logger.exception("Failed to duplicate theme")
 
     def _edit_theme(self):
         idx = self._combo_theme.currentIndex()
@@ -362,19 +361,19 @@ class _ThemeTab(QWidget):
             'xdg-open', [str(theme_data.file_path)])
 
     def apply(self):
-        """Rien a faire, le changement de theme est immediat."""
+        """Nothing to do, theme change is immediate."""
         pass
 
 # ======================================================================
-# Dialogue principal
+# Main dialog
 # ======================================================================
 
 class CanvasOptionsDialog(QDialog):
-    """Dialogue de configuration du canvas."""
+    """Canvas configuration dialog."""
 
     def __init__(self, parent, manager):
         super().__init__(parent)
-        self.setWindowTitle("Options du canvas")
+        self.setWindowTitle("Canvas options")
         self.setMinimumSize(550, 500)
 
         self._manager = manager
@@ -384,13 +383,13 @@ class CanvasOptionsDialog(QDialog):
         self._tabs = QTabWidget()
 
         self._tab_general = _GeneralTab(self._manager)
-        self._tabs.addTab(self._tab_general, "G\u00e9n\u00e9ral")
+        self._tabs.addTab(self._tab_general, "General")
 
         self._tab_naming = _NamingTab(self._manager)
-        self._tabs.addTab(self._tab_naming, "Nommage")
+        self._tabs.addTab(self._tab_naming, "Naming")
 
         self._tab_theme = _ThemeTab(self._manager)
-        self._tabs.addTab(self._tab_theme, "Th\u00e8me")
+        self._tabs.addTab(self._tab_theme, "Theme")
 
         layout.addWidget(self._tabs)
 

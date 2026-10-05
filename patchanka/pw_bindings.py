@@ -1,7 +1,7 @@
-"""Bindings ctypes minimaux pour libpipewire-0.3.
+"""Minimal ctypes bindings for libpipewire-0.3.
 
-Utilise un wrapper C (libpatchanka_pw.so) pour les fonctions
-static inline de PipeWire que ctypes ne peut pas appeler directement.
+Uses a C wrapper (libpatchanka_pw.so) for PipeWire functions that
+are static inline and cannot be called directly by ctypes.
 """
 
 import ctypes
@@ -12,26 +12,26 @@ from pathlib import Path
 _logger = logging.getLogger(__name__)
 
 
-# --- Chargement des bibliotheques ------------------------------------------
+# --- Library loading --------------------------------------------------------
 
 _lib_name = ctypes.util.find_library('pipewire-0.3')
 if _lib_name is None:
     raise ImportError(
-        "libpipewire-0.3 introuvable. "
-        "Installez pipewire et libpipewire-0.3-dev.")
+        "libpipewire-0.3 not found. "
+        "Please install pipewire and libpipewire-0.3-dev.")
 
 _lib = ctypes.CDLL(_lib_name, use_errno=True)
 
 _wrapper_path = Path(__file__).parent.parent / "native" / "libpatchanka_pw.so"
 if not _wrapper_path.is_file():
     raise ImportError(
-        f"Wrapper C introuvable : {_wrapper_path}\n"
-        f"Compilez-le avec : ./native/build.sh")
+        f"C wrapper not found: {_wrapper_path}\n"
+        f"Build it with: ./native/build.sh")
 
 _lib_wrapper = ctypes.CDLL(str(_wrapper_path), use_errno=True)
 
 
-# --- Constantes -------------------------------------------------------------
+# --- Constants --------------------------------------------------------------
 
 PW_VERSION_REGISTRY = 3
 PW_VERSION_CORE = 3
@@ -46,7 +46,7 @@ PW_TYPE_INTERFACE_Device = "PipeWire:Interface:Device"
 PW_TYPE_INTERFACE_Metadata = "PipeWire:Interface:Metadata"
 
 
-# --- Structures SPA ---------------------------------------------------------
+# --- SPA structures ---------------------------------------------------------
 
 class spa_hook(ctypes.Structure):
     _fields_ = [
@@ -86,7 +86,7 @@ class spa_source(ctypes.Structure):
     pass
 
 
-# --- Structures PipeWire ----------------------------------------------------
+# --- PipeWire structures ----------------------------------------------------
 
 class pw_main_loop(ctypes.Structure):
     pass
@@ -135,7 +135,7 @@ class pw_registry_events(ctypes.Structure):
     ]
 
 
-# --- Signatures libpipewire : main loop -------------------------------------
+# --- libpipewire signatures: main loop --------------------------------------
 
 _lib.pw_init.argtypes = [ctypes.POINTER(ctypes.c_int),
                          ctypes.POINTER(ctypes.POINTER(ctypes.c_char_p))]
@@ -157,7 +157,7 @@ _lib.pw_main_loop_get_loop.argtypes = [ctypes.POINTER(pw_main_loop)]
 _lib.pw_main_loop_get_loop.restype = ctypes.c_void_p
 
 
-# --- Signatures libpipewire : context ---------------------------------------
+# --- libpipewire signatures: context ----------------------------------------
 
 _lib.pw_context_new.argtypes = [
     ctypes.c_void_p,
@@ -177,19 +177,19 @@ _lib.pw_context_connect.argtypes = [
 _lib.pw_context_connect.restype = ctypes.POINTER(pw_core)
 
 
-# --- Signatures libpipewire : core ------------------------------------------
+# --- libpipewire signatures: core -------------------------------------------
 
 _lib.pw_core_disconnect.argtypes = [ctypes.POINTER(pw_core)]
 _lib.pw_core_disconnect.restype = None
 
 
-# --- Signatures libpipewire : proxy -----------------------------------------
+# --- libpipewire signatures: proxy ------------------------------------------
 
 _lib.pw_proxy_destroy.argtypes = [ctypes.POINTER(pw_proxy)]
 _lib.pw_proxy_destroy.restype = None
 
 
-# --- Signatures libpipewire : thread loop -----------------------------------
+# --- libpipewire signatures: thread loop ------------------------------------
 
 _lib.pw_thread_loop_new.argtypes = [
     ctypes.c_char_p,
@@ -216,7 +216,7 @@ _lib.pw_thread_loop_unlock.argtypes = [ctypes.c_void_p]
 _lib.pw_thread_loop_unlock.restype = None
 
 
-# --- Signatures wrapper C : registry ----------------------------------------
+# --- C wrapper signatures: registry -----------------------------------------
 
 _lib_wrapper.patchanka_get_registry.argtypes = [ctypes.POINTER(pw_core)]
 _lib_wrapper.patchanka_get_registry.restype = ctypes.POINTER(pw_registry)
@@ -251,7 +251,7 @@ _lib_wrapper.patchanka_registry_add_listener.argtypes = [
 _lib_wrapper.patchanka_registry_add_listener.restype = ctypes.c_int
 
 
-# --- Signatures wrapper C : node binding ------------------------------------
+# --- C wrapper signatures: node binding -------------------------------------
 
 PATCHANKA_NODE_INFO_CB = ctypes.CFUNCTYPE(
     None,
@@ -278,7 +278,7 @@ _lib_wrapper.patchanka_node_add_listener.argtypes = [
 _lib_wrapper.patchanka_node_add_listener.restype = ctypes.POINTER(spa_hook)
 
 
-# --- Signatures wrapper C : core --------------------------------------------
+# --- C wrapper signatures: core ---------------------------------------------
 
 PATCHANKA_CORE_ERROR_CB = ctypes.CFUNCTYPE(
     None,
@@ -299,7 +299,7 @@ _lib_wrapper.patchanka_add_core_listener.argtypes = [ctypes.POINTER(pw_core)]
 _lib_wrapper.patchanka_add_core_listener.restype = None
 
 
-# --- Signatures wrapper C : link --------------------------------------------
+# --- C wrapper signatures: link ---------------------------------------------
 
 _lib_wrapper.patchanka_create_link.argtypes = [
     ctypes.POINTER(pw_core),
@@ -318,7 +318,7 @@ _lib_wrapper.patchanka_destroy_proxy.argtypes = [ctypes.POINTER(pw_proxy)]
 _lib_wrapper.patchanka_destroy_proxy.restype = None
 
 
-# --- Signatures wrapper C : thread loop helpers -----------------------------
+# --- C wrapper signatures: thread loop helpers ------------------------------
 
 _lib_wrapper.patchanka_thread_loop_lock.argtypes = [ctypes.c_void_p]
 _lib_wrapper.patchanka_thread_loop_lock.restype = None
@@ -327,10 +327,10 @@ _lib_wrapper.patchanka_thread_loop_unlock.argtypes = [ctypes.c_void_p]
 _lib_wrapper.patchanka_thread_loop_unlock.restype = None
 
 
-# --- Helpers ---------------------------------------------------------------
+# --- Helpers ----------------------------------------------------------------
 
 def spa_dict_from_python(data: dict) -> tuple:
-    """Construit un spa_dict C a partir d'un dict Python."""
+    """Build a C spa_dict from a Python dict."""
     refs = []
     items_array = (spa_dict_item * len(data))()
 

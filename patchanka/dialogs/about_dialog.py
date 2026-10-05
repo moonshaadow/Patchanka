@@ -1,4 +1,4 @@
-"""Dialogue A propos de Patchanka."""
+"""About Patchanka dialog."""
 
 from qtpy.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QLabel,
@@ -7,22 +7,22 @@ from qtpy.QtCore import Qt
 
 
 class AboutDialog(QDialog):
-    """Affiche les informations sur Patchanka."""
+    """Display information about Patchanka."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("\u00c0 propos de Patchanka")
+        self.setWindowTitle("About Patchanka")
         self.setMinimumWidth(450)
 
         layout = QVBoxLayout(self)
 
-        # --- Titre ---
+        # --- Title ---
         title = QLabel("<h2>Patchanka</h2>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
         subtitle = QLabel(
-            "Patchbay PipeWire bas\u00e9 sur HoustonPatchbay")
+            "PipeWire patchbay based on HoustonPatchbay")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet("color: gray;")
         layout.addWidget(subtitle)
@@ -36,10 +36,10 @@ class AboutDialog(QDialog):
         try:
             from patchanka import __version__ as patchanka_version
         except Exception:
-            patchanka_version = "inconnue"
-        form.addRow("Patchanka :", QLabel(patchanka_version))
+            patchanka_version = "unknown"
+        form.addRow("Patchanka:", QLabel(patchanka_version))
 
-        pw_version = "inconnue"
+        pw_version = "unknown"
         try:
             from .. import pw_bindings as pw
             v = pw._lib_wrapper.patchanka_version()
@@ -47,10 +47,10 @@ class AboutDialog(QDialog):
                 pw_version = v.decode() if isinstance(v, bytes) else str(v)
         except Exception:
             pass
-        form.addRow("PipeWire :", QLabel(pw_version))
+        form.addRow("PipeWire:", QLabel(pw_version))
 
-        # Version de HoustonPatchbay
-        hp_version = "inconnue"
+        # HoustonPatchbay version
+        hp_version = "unknown"
         try:
             from pathlib import Path
             hp_readme = (Path(__file__).parent.parent.parent
@@ -59,28 +59,28 @@ class AboutDialog(QDialog):
                 hp_version = "submodule"
         except Exception:
             pass
-        form.addRow("HoustonPatchbay :", QLabel(hp_version))
+        form.addRow("HoustonPatchbay:", QLabel(hp_version))
 
         try:
             from qtpy.QtCore import qVersion
-            form.addRow("Qt :", QLabel(qVersion()))
+            form.addRow("Qt:", QLabel(qVersion()))
         except Exception:
             pass
 
         import sys
-        form.addRow("Python :", QLabel(sys.version.split()[0]))
+        form.addRow("Python:", QLabel(sys.version.split()[0]))
 
         layout.addWidget(group_versions)
 
-        # --- Chemins ---
-        group_paths = QGroupBox("Chemins")
+        # --- Paths ---
+        group_paths = QGroupBox("Paths")
         paths_layout = QFormLayout(group_paths)
 
         try:
             from .. import wireplumber_rules
             wm_path = wireplumber_rules._config_file()
             paths_layout.addRow(
-                "Regles WirePlumber :", QLabel(str(wm_path)))
+                "WirePlumber rules:", QLabel(str(wm_path)))
         except Exception:
             pass
 
@@ -88,7 +88,7 @@ class AboutDialog(QDialog):
 
         layout.addStretch()
 
-        # --- Boutons ---
+        # --- Buttons ---
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)

@@ -1,7 +1,7 @@
-"""Backend PipeWire natif pour HoustonPatchbay.
+"""Native PipeWire backend for HoustonPatchbay.
 
-Herite de PatchEngine (implementation JACK) et surcharge toutes les
-methodes qui touchent a l'API JACK.
+Inherits from PatchEngine (JACK implementation) and overrides all
+methods that touch the JACK API.
 """
 
 import logging
@@ -27,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 
 class PipeWireEngine(PatchEngine):
-    """Moteur de patchbay base sur l'API PipeWire native."""
+    """Patchbay engine based on the native PipeWire API."""
 
     jack_running = False
     pipewire_running = False
@@ -45,39 +45,39 @@ class PipeWireEngine(PatchEngine):
         self._config = config
         self._pw_registry: Optional[PipeWireRegistry] = None
 
-        # Mapping id PipeWire -> PortData
+        # Mapping PipeWire id -> PortData
         self._pw_ports: dict[int, PortData] = {}
 
-        # Mapping id de noeud PipeWire -> (nom, media_class, categorie, props)
+        # Mapping PipeWire node id -> (name, media_class, category, props)
         self._pw_nodes: dict[int, tuple[str, str, str, dict]] = {}
 
-        # Mapping id de lien -> (out_port_id, in_port_id)
+        # Mapping link id -> (out_port_id, in_port_id)
         self._pw_links: dict[int, tuple[int, int]] = {}
 
         # Mapping (out_port_id, in_port_id) -> link_id
         self._pw_link_by_pair: dict[tuple[int, int], int] = {}
 
-        # Mapping nom de port HP -> id PipeWire
+        # Mapping HP port name -> PipeWire id
         self._port_name_to_id: dict[str, int] = {}
 
-        # Mapping id de port -> id de noeud parent
+        # Mapping port id -> parent node id
         self._port_node_id: dict[int, int] = {}
 
-        # Ports monitor actuellement masques (id PipeWire)
+        # Monitor ports currently hidden (PipeWire id)
         self._hidden_monitor_ports: set[int] = set()
 
-        # Cache des noms personnalises (recharge a chaque ajout de noeud)
+        # Cache of custom names (refreshed on each node addition)
         self._custom_names_cache: dict[str, str] = {}
 
     # ------------------------------------------------------------------
-    # Demarrage / arret
+    # Start / stop
     # ------------------------------------------------------------------
 
     def start(self, patchbay_engine):
         self.peo = patchbay_engine
         self.peo.write_existence_file()
 
-        # Charger les noms personnalises une premiere fois
+        # Load custom names once
         self._refresh_custom_names_cache()
 
         self._pw_registry = PipeWireRegistry(
@@ -91,7 +91,7 @@ class PipeWireEngine(PatchEngine):
         try:
             self._pw_registry.start()
         except Exception:
-            _logger.exception("Echec de demarrage de PipeWire")
+            _logger.exception("PipeWire startup failed")
             self.peo.send_server_lose()
             self.terminate = True
             return
@@ -137,27 +137,27 @@ class PipeWireEngine(PatchEngine):
         self.refresh()
 
     def _refresh_custom_names_cache(self):
-        """Recharge le cache des noms personnalises."""
+        """Refresh the custom names cache."""
         if self._config is None:
             self._custom_names_cache = {}
             return
         try:
             self._custom_names_cache = self._config.get_custom_names()
         except Exception:
-            _logger.exception("Erreur lors du chargement des noms")
+            _logger.exception("Error while loading custom names")
             self._custom_names_cache = {}
 
     def reload_custom_names(self):
-        """Recharge les noms personnalises et rafraichit le graphe."""
+        """Reload custom names and refresh the graph."""
         self._refresh_custom_names_cache()
         self.refresh()
 
     # ------------------------------------------------------------------
-    # Gestion de la perte / restauration du core
+    # Core loss / restoration handling
     # ------------------------------------------------------------------
 
     def _on_pw_core_lost(self):
-        _logger.warning("Core PipeWire perdu, nettoyage de l'etat")
+        _logger.warning("PipeWire core lost, cleaning state")
 
         self.pipewire_running = False
         self.jack_running = False
@@ -176,19 +176,19 @@ class PipeWireEngine(PatchEngine):
             self.peo.server_stopped()
 
     def _on_pw_core_restored(self):
-        _logger.info("Core PipeWire restaure")
+        _logger.info("PipeWire core restored")
 
         self.pipewire_running = True
         self.jack_running = True
 
-        # Recharger les noms personnalises (le systeme a pu changer)
+        # Reload custom names (the system may have changed)
         self._refresh_custom_names_cache()
 
         if self.peo is not None:
             self.peo.server_restarted()
 
     # ------------------------------------------------------------------
-    # Traitement des evenements
+    # Event processing
     # ------------------------------------------------------------------
 
     def process_patch_events(self):
@@ -238,7 +238,7 @@ class PipeWireEngine(PatchEngine):
                     self.jack_running = False
 
         if count > 0:
-            _logger.debug(f"process_patch_events : {count} evenements traites")
+            _logger.debug(f"process_patch_events: {count} events processed")
 
     def refresh(self):
         if self.peo is None:
@@ -249,7 +249,7 @@ class PipeWireEngine(PatchEngine):
             self.peo.server_restarted()
 
     # ------------------------------------------------------------------
-    # Callbacks du registry
+    # Registry callbacks
     # ------------------------------------------------------------------
 
     def _on_pw_global_added(self, id_: int, type_: str, props: dict):
@@ -336,7 +336,7 @@ class PipeWireEngine(PatchEngine):
         node_name = props.get("node.name", f"node-{id_}")
         media_class = props.get("media.class", "")
 
-        # Determiner le nom d'affichage en utilisant le cache
+        # Determine the display name using the cache
         display_name = node_display_name(
             props, self._custom_names_cache)
 
@@ -349,7 +349,7 @@ class PipeWireEngine(PatchEngine):
 
         self._pw_nodes[id_] = (node_name, media_class, category, props)
 
-        # HP utilise le nom d'affichage comme nom de groupe
+        # HP uses the display name as the group name
         self.patch_event_queue.add(
             PatchEvent.CLIENT_ADDED, display_name)
         self.peo.associate_client_name_and_uuid(display_name, id_)
@@ -373,8 +373,8 @@ class PipeWireEngine(PatchEngine):
             node_display = node_display_name(
                 node_props, self._custom_names_cache)
 
-        # === DETECTION DU TYPE DE PORT ===
-        # On inspecte les proprietes du port ET du noeud parent
+        # === PORT TYPE DETECTION ===
+        # We inspect both the port properties and the parent node
         from .houston_adapter import is_midi_port
         if is_midi_port(props, node_media_class):
             port_type = PortType.MIDI_JACK
@@ -429,7 +429,7 @@ class PipeWireEngine(PatchEngine):
         return None
 
     # ------------------------------------------------------------------
-    # Collecte du graphe
+    # Graph collection
     # ------------------------------------------------------------------
 
     def _collect_graph(self):
@@ -446,7 +446,7 @@ class PipeWireEngine(PatchEngine):
         self._port_node_id.clear()
         self._hidden_monitor_ports.clear()
 
-        # Recharger les noms personnalises
+        # Reload custom names
         self._refresh_custom_names_cache()
 
         for id_, (type_, props) in self._pw_registry.objects.items():
@@ -462,7 +462,7 @@ class PipeWireEngine(PatchEngine):
                 self._handle_link_added(id_, props)
 
     # ------------------------------------------------------------------
-    # Connexions
+    # Connections
     # ------------------------------------------------------------------
 
     def connect_ports(
@@ -476,7 +476,7 @@ class PipeWireEngine(PatchEngine):
 
         if out_id is None or in_id is None:
             _logger.warning(
-                f"Port introuvable : {port_out_name} -> {port_in_name}")
+                f"Port not found: {port_out_name} -> {port_in_name}")
             return False
 
         if disconnect:
@@ -488,7 +488,7 @@ class PipeWireEngine(PatchEngine):
         return self._pw_registry.create_link(out_id, in_id)
 
     # ------------------------------------------------------------------
-    # Transport (desactive)
+    # Transport (disabled)
     # ------------------------------------------------------------------
 
     def transport_play(self, play: bool):

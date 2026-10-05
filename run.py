@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Lanceur de Patchanka."""
+"""Patchanka launcher."""
 
 import os
 import sys
 from pathlib import Path
 
-# Forcer qtpy a utiliser PyQt6, le binding avec lequel HP a ete compile
+# Force qtpy to use PyQt6, the binding with which HP was compiled
 os.environ['QT_API'] = 'pyqt6'
 
 ROOT = Path(__file__).parent
 HP_SOURCE = ROOT / "HoustonPatchbay" / "source"
 
 if not HP_SOURCE.is_dir():
-    print(f"Erreur : {HP_SOURCE} introuvable.")
-    print("Initialisez le submodule :")
+    print(f"Error: {HP_SOURCE} not found.")
+    print("Please initialize the submodule:")
     print("  git submodule update --init --recursive")
     sys.exit(1)
 

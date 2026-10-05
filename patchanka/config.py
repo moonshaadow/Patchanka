@@ -1,4 +1,4 @@
-"""Configuration persistante de Patchanka."""
+"""Patchanka persistent configuration."""
 
 import logging
 from qtpy.QtCore import QSettings
@@ -9,16 +9,16 @@ _logger = logging.getLogger(__name__)
 
 
 class PatchankaConfig:
-    """Wrapper autour de QSettings pour les options de Patchanka."""
+    """Wrapper around QSettings for Patchanka options."""
 
     def __init__(self, settings: QSettings):
         self._settings = settings
 
-    # --- Options PipeWire ---
+    # --- PipeWire options ---
 
     @property
     def hide_monitor_ports(self) -> bool:
-        """Masquer les ports monitor_* (par defaut : True)."""
+        """Hide monitor_* ports (default: True)."""
         return self._settings.value(
             'PipeWire/hide_monitor_ports', True, type=bool)
 
@@ -27,25 +27,25 @@ class PatchankaConfig:
         self._settings.setValue('PipeWire/hide_monitor_ports', bool(value))
         self._settings.sync()
 
-    # --- Noms personnalises (stockes dans WirePlumber) ---
+    # --- Custom names (stored in WirePlumber) ---
 
     def get_custom_names(self) -> dict:
-        """Retourne les noms personnalises stockes dans WirePlumber."""
+        """Return custom names stored in WirePlumber."""
         return wireplumber_rules.load_rules()
 
     def set_custom_name(self, node_name: str, display_name: str):
-        """Definit un nom personnalise pour un noeud."""
+        """Set a custom name for a node."""
         wireplumber_rules.set_custom_name(node_name, display_name)
 
     def remove_custom_name(self, node_name: str):
-        """Supprime un nom personnalise."""
+        """Remove a custom name."""
         wireplumber_rules.remove_custom_name(node_name)
 
     def clear_custom_names(self):
-        """Supprime tous les noms personnalises Patchanka."""
+        """Remove all Patchanka custom names."""
         wireplumber_rules.clear_all_rules()
 
-    # --- Options generales ---
+    # --- General options ---
 
     @property
     def theme_name(self) -> str:

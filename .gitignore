@@ -9,17 +9,16 @@ dist/
 *.egg-info/
 .eggs/
 
-# Environnements virtuels
+# Virtual environments
 venv/
 env/
 .venv/
 
 # IDE
 .vscode/
-.idea/
 *.swp
 *.swo
 
-# Specifique a Patchanka
+# Patchanka-specific
 /tmp/
 *.log

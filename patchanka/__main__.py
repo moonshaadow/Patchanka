@@ -1,4 +1,4 @@
-"""Point d'entrée de Patchanka."""
+"""Patchanka entry point."""
 
 import sys
 import logging
