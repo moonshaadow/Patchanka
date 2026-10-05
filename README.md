@@ -29,7 +29,7 @@ as its graphical patchbay interface.
 
 Clone the repository with its submodule:
 
-    git clone --recurse-submodules <repository-url>
+    git clone --recurse-submodules https://github.com/moonshaadow/Patchanka.git
     cd Patchanka
 
 Build the C wrapper:
