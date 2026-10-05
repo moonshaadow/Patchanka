@@ -57,3 +57,4 @@ Many thanks to the author for making it available as a reusable component.
 ## License
 
 GPL v2 or later. See the LICENSE file for details.
+© 2026 A. Vartanian
