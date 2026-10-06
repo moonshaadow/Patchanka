@@ -1,3 +1,6 @@
 [submodule "HoustonPatchbay"]
 	path = HoustonPatchbay
 	url = https://codeberg.org/houston4444/HoustonPatchbay.git
+[submodule "libs/pw-bridge"]
+	path = libs/pw-bridge
+	url = https://github.com/moonshaadow/pw-bridge
