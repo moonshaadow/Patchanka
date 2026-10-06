@@ -1,5 +1,5 @@
 #!/bin/bash
-# build.sh - Build the Patchanka C wrapper.
+# build.sh - Build the pw_bridge C wrapper.
 
 set -e
 cd "$(dirname "$0")"
@@ -13,4 +13,4 @@ fi
 make clean
 make
 
-echo "Wrapper built: $(pwd)/libpatchanka_pw.so"
+echo "Wrapper built: $(pwd)/libpw_bridge.so"

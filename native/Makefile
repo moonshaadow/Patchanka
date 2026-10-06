@@ -1,4 +1,4 @@
-# Makefile to build the Patchanka C wrapper.
+# Makefile to build the pw_bridge C wrapper.
 
 CC      ?= cc
 CFLAGS  ?= -O2 -fPIC -Wall -Wextra
@@ -8,8 +8,8 @@ PKG_CONFIG ?= pkg-config
 PW_CFLAGS  := $(shell $(PKG_CONFIG) --cflags libpipewire-0.3)
 PW_LIBS    := $(shell $(PKG_CONFIG) --libs libpipewire-0.3)
 
-TARGET := libpatchanka_pw.so
-SRC    := patchanka_pw.c
+TARGET := libpw_bridge.so
+SRC    := pw_bridge.c
 
 .PHONY: all clean rebuild
 

@@ -1,6 +1,6 @@
 """Minimal ctypes bindings for libpipewire-0.3.
 
-Uses a C wrapper (libpatchanka_pw.so) for PipeWire functions that
+Uses a C wrapper (libpw_bridge.so) for PipeWire functions that
 are static inline and cannot be called directly by ctypes.
 """
 
@@ -22,7 +22,7 @@ if _lib_name is None:
 
 _lib = ctypes.CDLL(_lib_name, use_errno=True)
 
-_wrapper_path = Path(__file__).parent.parent / "native" / "libpatchanka_pw.so"
+_wrapper_path = Path(__file__).parent.parent / "native" / "libpw_bridge.so"
 if not _wrapper_path.is_file():
     raise ImportError(
         f"C wrapper not found: {_wrapper_path}\n"
@@ -218,10 +218,10 @@ _lib.pw_thread_loop_unlock.restype = None
 
 # --- C wrapper signatures: registry -----------------------------------------
 
-_lib_wrapper.patchanka_get_registry.argtypes = [ctypes.POINTER(pw_core)]
-_lib_wrapper.patchanka_get_registry.restype = ctypes.POINTER(pw_registry)
+_lib_wrapper.pw_bridge_get_registry.argtypes = [ctypes.POINTER(pw_core)]
+_lib_wrapper.pw_bridge_get_registry.restype = ctypes.POINTER(pw_registry)
 
-PATCHANKA_GLOBAL_CB = ctypes.CFUNCTYPE(
+PW_BRIDGE_GLOBAL_CB = ctypes.CFUNCTYPE(
     None,
     ctypes.c_void_p,
     ctypes.c_uint32,
@@ -231,56 +231,56 @@ PATCHANKA_GLOBAL_CB = ctypes.CFUNCTYPE(
     ctypes.POINTER(spa_dict),
 )
 
-PATCHANKA_GLOBAL_REMOVE_CB = ctypes.CFUNCTYPE(
+PW_BRIDGE_GLOBAL_REMOVE_CB = ctypes.CFUNCTYPE(
     None,
     ctypes.c_void_p,
     ctypes.c_uint32,
 )
 
-_lib_wrapper.patchanka_set_registry_callbacks.argtypes = [
-    PATCHANKA_GLOBAL_CB,
-    PATCHANKA_GLOBAL_REMOVE_CB,
+_lib_wrapper.pw_bridge_set_registry_callbacks.argtypes = [
+    PW_BRIDGE_GLOBAL_CB,
+    PW_BRIDGE_GLOBAL_REMOVE_CB,
     ctypes.c_void_p,
 ]
-_lib_wrapper.patchanka_set_registry_callbacks.restype = None
+_lib_wrapper.pw_bridge_set_registry_callbacks.restype = None
 
-_lib_wrapper.patchanka_registry_add_listener.argtypes = [
+_lib_wrapper.pw_bridge_registry_add_listener.argtypes = [
     ctypes.POINTER(pw_registry),
     ctypes.POINTER(spa_hook),
 ]
-_lib_wrapper.patchanka_registry_add_listener.restype = ctypes.c_int
+_lib_wrapper.pw_bridge_registry_add_listener.restype = ctypes.c_int
 
 
 # --- C wrapper signatures: node binding -------------------------------------
 
-PATCHANKA_NODE_INFO_CB = ctypes.CFUNCTYPE(
+PW_BRIDGE_NODE_INFO_CB = ctypes.CFUNCTYPE(
     None,
     ctypes.c_void_p,
     ctypes.c_uint32,
     ctypes.POINTER(spa_dict),
 )
 
-_lib_wrapper.patchanka_set_node_info_callback.argtypes = [
-    PATCHANKA_NODE_INFO_CB,
+_lib_wrapper.pw_bridge_set_node_info_callback.argtypes = [
+    PW_BRIDGE_NODE_INFO_CB,
     ctypes.c_void_p,
 ]
-_lib_wrapper.patchanka_set_node_info_callback.restype = None
+_lib_wrapper.pw_bridge_set_node_info_callback.restype = None
 
-_lib_wrapper.patchanka_bind_node.argtypes = [
+_lib_wrapper.pw_bridge_bind_node.argtypes = [
     ctypes.POINTER(pw_registry),
     ctypes.c_uint32,
 ]
-_lib_wrapper.patchanka_bind_node.restype = ctypes.POINTER(pw_proxy)
+_lib_wrapper.pw_bridge_bind_node.restype = ctypes.POINTER(pw_proxy)
 
-_lib_wrapper.patchanka_node_add_listener.argtypes = [
+_lib_wrapper.pw_bridge_node_add_listener.argtypes = [
     ctypes.POINTER(pw_proxy),
 ]
-_lib_wrapper.patchanka_node_add_listener.restype = ctypes.POINTER(spa_hook)
+_lib_wrapper.pw_bridge_node_add_listener.restype = ctypes.POINTER(spa_hook)
 
 
 # --- C wrapper signatures: core ---------------------------------------------
 
-PATCHANKA_CORE_ERROR_CB = ctypes.CFUNCTYPE(
+PW_BRIDGE_CORE_ERROR_CB = ctypes.CFUNCTYPE(
     None,
     ctypes.c_void_p,    # user_data
     ctypes.c_uint32,    # id
@@ -289,42 +289,42 @@ PATCHANKA_CORE_ERROR_CB = ctypes.CFUNCTYPE(
     ctypes.c_char_p,    # message
 )
 
-_lib_wrapper.patchanka_set_core_error_callback.argtypes = [
-    PATCHANKA_CORE_ERROR_CB,
+_lib_wrapper.pw_bridge_set_core_error_callback.argtypes = [
+    PW_BRIDGE_CORE_ERROR_CB,
     ctypes.c_void_p,
 ]
-_lib_wrapper.patchanka_set_core_error_callback.restype = None
+_lib_wrapper.pw_bridge_set_core_error_callback.restype = None
 
-_lib_wrapper.patchanka_add_core_listener.argtypes = [ctypes.POINTER(pw_core)]
-_lib_wrapper.patchanka_add_core_listener.restype = None
+_lib_wrapper.pw_bridge_add_core_listener.argtypes = [ctypes.POINTER(pw_core)]
+_lib_wrapper.pw_bridge_add_core_listener.restype = None
 
 
 # --- C wrapper signatures: link ---------------------------------------------
 
-_lib_wrapper.patchanka_create_link.argtypes = [
+_lib_wrapper.pw_bridge_create_link.argtypes = [
     ctypes.POINTER(pw_core),
     ctypes.c_uint32,
     ctypes.c_uint32,
 ]
-_lib_wrapper.patchanka_create_link.restype = ctypes.POINTER(pw_proxy)
+_lib_wrapper.pw_bridge_create_link.restype = ctypes.POINTER(pw_proxy)
 
-_lib_wrapper.patchanka_destroy_link.argtypes = [
+_lib_wrapper.pw_bridge_destroy_link.argtypes = [
     ctypes.POINTER(pw_registry),
     ctypes.c_uint32,
 ]
-_lib_wrapper.patchanka_destroy_link.restype = ctypes.c_int
+_lib_wrapper.pw_bridge_destroy_link.restype = ctypes.c_int
 
-_lib_wrapper.patchanka_destroy_proxy.argtypes = [ctypes.POINTER(pw_proxy)]
-_lib_wrapper.patchanka_destroy_proxy.restype = None
+_lib_wrapper.pw_bridge_destroy_proxy.argtypes = [ctypes.POINTER(pw_proxy)]
+_lib_wrapper.pw_bridge_destroy_proxy.restype = None
 
 
 # --- C wrapper signatures: thread loop helpers ------------------------------
 
-_lib_wrapper.patchanka_thread_loop_lock.argtypes = [ctypes.c_void_p]
-_lib_wrapper.patchanka_thread_loop_lock.restype = None
+_lib_wrapper.pw_bridge_thread_loop_lock.argtypes = [ctypes.c_void_p]
+_lib_wrapper.pw_bridge_thread_loop_lock.restype = None
 
-_lib_wrapper.patchanka_thread_loop_unlock.argtypes = [ctypes.c_void_p]
-_lib_wrapper.patchanka_thread_loop_unlock.restype = None
+_lib_wrapper.pw_bridge_thread_loop_unlock.argtypes = [ctypes.c_void_p]
+_lib_wrapper.pw_bridge_thread_loop_unlock.restype = None
 
 
 # --- Helpers ----------------------------------------------------------------

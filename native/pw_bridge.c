@@ -1,11 +1,14 @@
-/* patchanka_pw.c
+/* pw_bridge.c
  *
  * Minimal C wrapper exposing the PipeWire functions needed by
- * Patchanka that ctypes cannot call directly (static inline
- * functions in the PipeWire headers).
+ * applications that cannot call them directly through ctypes
+ * (static inline functions in the PipeWire headers).
+ *
+ * This wrapper is designed to be reusable: it has no dependency
+ * on any specific application and only requires libpipewire.
  *
  * Build:
- *   make -C native
+ *   make
  */
 
 #include <pipewire/pipewire.h>
@@ -20,7 +23,7 @@
  * Registry: creation
  * ==================================================================== */
 
-struct pw_registry *patchanka_get_registry(struct pw_core *core)
+struct pw_registry *pw_bridge_get_registry(struct pw_core *core)
 {
     return pw_core_get_registry(core, PW_VERSION_REGISTRY, 0);
 }
@@ -30,7 +33,7 @@ struct pw_registry *patchanka_get_registry(struct pw_core *core)
  * Registry: listener
  * ==================================================================== */
 
-typedef void (*patchanka_global_cb_t)(
+typedef void (*pw_bridge_global_cb_t)(
     void *user_data,
     uint32_t id,
     uint32_t permissions,
@@ -38,12 +41,12 @@ typedef void (*patchanka_global_cb_t)(
     uint32_t version,
     const struct spa_dict *props);
 
-typedef void (*patchanka_global_remove_cb_t)(
+typedef void (*pw_bridge_global_remove_cb_t)(
     void *user_data,
     uint32_t id);
 
-static patchanka_global_cb_t        g_global_cb        = NULL;
-static patchanka_global_remove_cb_t g_global_remove_cb = NULL;
+static pw_bridge_global_cb_t        g_global_cb        = NULL;
+static pw_bridge_global_remove_cb_t g_global_remove_cb = NULL;
 static void                        *g_user_data        = NULL;
 
 static void _global_cb_relay(void *data, uint32_t id, uint32_t permissions,
@@ -68,9 +71,9 @@ static struct pw_registry_events g_registry_events = {
     .global_remove = _global_remove_cb_relay,
 };
 
-void patchanka_set_registry_callbacks(
-    patchanka_global_cb_t global_cb,
-    patchanka_global_remove_cb_t global_remove_cb,
+void pw_bridge_set_registry_callbacks(
+    pw_bridge_global_cb_t global_cb,
+    pw_bridge_global_remove_cb_t global_remove_cb,
     void *user_data)
 {
     g_global_cb = global_cb;
@@ -78,7 +81,7 @@ void patchanka_set_registry_callbacks(
     g_user_data = user_data;
 }
 
-int patchanka_registry_add_listener(
+int pw_bridge_registry_add_listener(
     struct pw_registry *registry,
     struct spa_hook *hook)
 {
@@ -91,14 +94,14 @@ int patchanka_registry_add_listener(
  * Core: listeners (diagnostic + disconnection detection)
  * ==================================================================== */
 
-typedef void (*patchanka_core_error_cb_t)(
+typedef void (*pw_bridge_core_error_cb_t)(
     void *user_data,
     uint32_t id,
     int seq,
     int res,
     const char *message);
 
-static patchanka_core_error_cb_t g_core_error_cb = NULL;
+static pw_bridge_core_error_cb_t g_core_error_cb = NULL;
 static void                     *g_core_error_user_data = NULL;
 
 static void _core_info_cb(void *data, const struct pw_core_info *info)
@@ -135,14 +138,14 @@ static const struct pw_core_events g_core_events = {
 
 static struct spa_hook g_core_hook;
 
-void patchanka_set_core_error_callback(
-    patchanka_core_error_cb_t cb, void *user_data)
+void pw_bridge_set_core_error_callback(
+    pw_bridge_core_error_cb_t cb, void *user_data)
 {
     g_core_error_cb = cb;
     g_core_error_user_data = user_data;
 }
 
-void patchanka_add_core_listener(struct pw_core *core)
+void pw_bridge_add_core_listener(struct pw_core *core)
 {
     pw_core_add_listener(core, &g_core_hook, &g_core_events, NULL);
 }
@@ -152,12 +155,12 @@ void patchanka_add_core_listener(struct pw_core *core)
  * Binding on a node and reading its complete properties
  * ==================================================================== */
 
-typedef void (*patchanka_node_info_cb_t)(
+typedef void (*pw_bridge_node_info_cb_t)(
     void *user_data,
     uint32_t node_id,
     const struct spa_dict *props);
 
-static patchanka_node_info_cb_t g_node_info_cb = NULL;
+static pw_bridge_node_info_cb_t g_node_info_cb = NULL;
 static void                    *g_node_info_user_data = NULL;
 
 static void _node_info_relay(void *data,
@@ -173,21 +176,21 @@ static const struct pw_node_events g_node_events = {
     .info = _node_info_relay,
 };
 
-void patchanka_set_node_info_callback(patchanka_node_info_cb_t cb,
+void pw_bridge_set_node_info_callback(pw_bridge_node_info_cb_t cb,
                                       void *user_data)
 {
     g_node_info_cb = cb;
     g_node_info_user_data = user_data;
 }
 
-struct pw_proxy *patchanka_bind_node(struct pw_registry *registry,
+struct pw_proxy *pw_bridge_bind_node(struct pw_registry *registry,
                                      uint32_t node_id)
 {
     return (struct pw_proxy *)pw_registry_bind(
         registry, node_id, PW_TYPE_INTERFACE_Node, PW_VERSION_NODE, 0);
 }
 
-struct spa_hook *patchanka_node_add_listener(struct pw_proxy *proxy)
+struct spa_hook *pw_bridge_node_add_listener(struct pw_proxy *proxy)
 {
     struct spa_hook *hook = calloc(1, sizeof(struct spa_hook));
     if (hook == NULL)
@@ -202,7 +205,7 @@ struct spa_hook *patchanka_node_add_listener(struct pw_proxy *proxy)
  * Link creation
  * ==================================================================== */
 
-struct pw_proxy *patchanka_create_link(struct pw_core *core,
+struct pw_proxy *pw_bridge_create_link(struct pw_core *core,
                                        uint32_t out_port_id,
                                        uint32_t in_port_id)
 {
@@ -237,7 +240,7 @@ struct pw_proxy *patchanka_create_link(struct pw_core *core,
  * Link destruction
  * ==================================================================== */
 
-int patchanka_destroy_link(struct pw_registry *registry, uint32_t link_id)
+int pw_bridge_destroy_link(struct pw_registry *registry, uint32_t link_id)
 {
     return pw_registry_destroy(registry, link_id);
 }
@@ -247,7 +250,7 @@ int patchanka_destroy_link(struct pw_registry *registry, uint32_t link_id)
  * Proxy destruction
  * ==================================================================== */
 
-void patchanka_destroy_proxy(struct pw_proxy *proxy)
+void pw_bridge_destroy_proxy(struct pw_proxy *proxy)
 {
     if (proxy != NULL)
         pw_proxy_destroy(proxy);
@@ -258,7 +261,7 @@ void patchanka_destroy_proxy(struct pw_proxy *proxy)
  * Library version (debug)
  * ==================================================================== */
 
-const char *patchanka_version(void)
+const char *pw_bridge_version(void)
 {
     return pw_get_library_version();
 }
@@ -268,12 +271,12 @@ const char *patchanka_version(void)
  * Thread loop helpers
  * ==================================================================== */
 
-void patchanka_thread_loop_lock(void *thread_loop)
+void pw_bridge_thread_loop_lock(void *thread_loop)
 {
     pw_thread_loop_lock((struct pw_thread_loop *)thread_loop);
 }
 
-void patchanka_thread_loop_unlock(void *thread_loop)
+void pw_bridge_thread_loop_unlock(void *thread_loop)
 {
     pw_thread_loop_unlock((struct pw_thread_loop *)thread_loop);
 }

@@ -45,18 +45,18 @@ class PipeWireRegistry:
 
         # Strong references to C callbacks
         self._registry_hook = pw.spa_hook()
-        self._global_cb_c = pw.PATCHANKA_GLOBAL_CB(self._registry_global_cb)
-        self._global_remove_cb_c = pw.PATCHANKA_GLOBAL_REMOVE_CB(
+        self._global_cb_c = pw.PW_BRIDGE_GLOBAL_CB(self._registry_global_cb)
+        self._global_remove_cb_c = pw.PW_BRIDGE_GLOBAL_REMOVE_CB(
             self._registry_global_remove_cb)
-        self._node_info_cb_c = pw.PATCHANKA_NODE_INFO_CB(self._node_info_cb)
-        self._core_error_cb_c = pw.PATCHANKA_CORE_ERROR_CB(
+        self._node_info_cb_c = pw.PW_BRIDGE_NODE_INFO_CB(self._node_info_cb)
+        self._core_error_cb_c = pw.PW_BRIDGE_CORE_ERROR_CB(
             self._core_error_cb)
 
-        pw._lib_wrapper.patchanka_set_registry_callbacks(
+        pw._lib_wrapper.pw_bridge_set_registry_callbacks(
             self._global_cb_c, self._global_remove_cb_c, None)
-        pw._lib_wrapper.patchanka_set_node_info_callback(
+        pw._lib_wrapper.pw_bridge_set_node_info_callback(
             self._node_info_cb_c, None)
-        pw._lib_wrapper.patchanka_set_core_error_callback(
+        pw._lib_wrapper.pw_bridge_set_core_error_callback(
             self._core_error_cb_c, None)
 
         self._running = False
@@ -97,7 +97,7 @@ class PipeWireRegistry:
 
     def _create_connection(self) -> bool:
         """Create the thread loop, context, core and registry."""
-        self._thread_loop = pw._lib.pw_thread_loop_new(b"patchanka", None)
+        self._thread_loop = pw._lib.pw_thread_loop_new(b"pw_bridge", None)
         if not self._thread_loop:
             _logger.error("Failed to create the thread loop")
             return False
@@ -113,14 +113,14 @@ class PipeWireRegistry:
             _logger.error("Failed to connect to the core")
             return False
 
-        pw._lib_wrapper.patchanka_add_core_listener(self._core)
+        pw._lib_wrapper.pw_bridge_add_core_listener(self._core)
 
-        self._registry = pw._lib_wrapper.patchanka_get_registry(self._core)
+        self._registry = pw._lib_wrapper.pw_bridge_get_registry(self._core)
         if not self._registry:
             _logger.error("Failed to retrieve the registry")
             return False
 
-        ret = pw._lib_wrapper.patchanka_registry_add_listener(
+        ret = pw._lib_wrapper.pw_bridge_registry_add_listener(
             self._registry, ctypes.byref(self._registry_hook))
         if ret < 0:
             _logger.error("Failed to register the registry listener")
@@ -196,20 +196,20 @@ class PipeWireRegistry:
 
                 # Reset hooks and callbacks
                 self._registry_hook = pw.spa_hook()
-                self._global_cb_c = pw.PATCHANKA_GLOBAL_CB(
+                self._global_cb_c = pw.PW_BRIDGE_GLOBAL_CB(
                     self._registry_global_cb)
-                self._global_remove_cb_c = pw.PATCHANKA_GLOBAL_REMOVE_CB(
+                self._global_remove_cb_c = pw.PW_BRIDGE_GLOBAL_REMOVE_CB(
                     self._registry_global_remove_cb)
-                self._node_info_cb_c = pw.PATCHANKA_NODE_INFO_CB(
+                self._node_info_cb_c = pw.PW_BRIDGE_NODE_INFO_CB(
                     self._node_info_cb)
-                self._core_error_cb_c = pw.PATCHANKA_CORE_ERROR_CB(
+                self._core_error_cb_c = pw.PW_BRIDGE_CORE_ERROR_CB(
                     self._core_error_cb)
 
-                pw._lib_wrapper.patchanka_set_registry_callbacks(
+                pw._lib_wrapper.pw_bridge_set_registry_callbacks(
                     self._global_cb_c, self._global_remove_cb_c, None)
-                pw._lib_wrapper.patchanka_set_node_info_callback(
+                pw._lib_wrapper.pw_bridge_set_node_info_callback(
                     self._node_info_cb_c, None)
-                pw._lib_wrapper.patchanka_set_core_error_callback(
+                pw._lib_wrapper.pw_bridge_set_core_error_callback(
                     self._core_error_cb_c, None)
 
                 self._destroy_connection()
@@ -331,13 +331,13 @@ class PipeWireRegistry:
         if node_id in self._node_proxies:
             return
 
-        proxy = pw._lib_wrapper.patchanka_bind_node(
+        proxy = pw._lib_wrapper.pw_bridge_bind_node(
             self._registry, node_id)
 
         if not proxy:
             return
 
-        hook = pw._lib_wrapper.patchanka_node_add_listener(proxy)
+        hook = pw._lib_wrapper.pw_bridge_node_add_listener(proxy)
         if not hook:
             return
 
@@ -352,12 +352,12 @@ class PipeWireRegistry:
         if not self._running or self._core is None or self._core_lost:
             return False
 
-        pw._lib_wrapper.patchanka_thread_loop_lock(self._thread_loop)
+        pw._lib_wrapper.pw_bridge_thread_loop_lock(self._thread_loop)
         try:
-            proxy = pw._lib_wrapper.patchanka_create_link(
+            proxy = pw._lib_wrapper.pw_bridge_create_link(
                 self._core, out_port_id, in_port_id)
         finally:
-            pw._lib_wrapper.patchanka_thread_loop_unlock(self._thread_loop)
+            pw._lib_wrapper.pw_bridge_thread_loop_unlock(self._thread_loop)
 
         if not proxy:
             return False
@@ -367,12 +367,12 @@ class PipeWireRegistry:
         if not self._running or self._registry is None or self._core_lost:
             return False
 
-        pw._lib_wrapper.patchanka_thread_loop_lock(self._thread_loop)
+        pw._lib_wrapper.pw_bridge_thread_loop_lock(self._thread_loop)
         try:
-            ret = pw._lib_wrapper.patchanka_destroy_link(
+            ret = pw._lib_wrapper.pw_bridge_destroy_link(
                 self._registry, link_id)
         finally:
-            pw._lib_wrapper.patchanka_thread_loop_unlock(self._thread_loop)
+            pw._lib_wrapper.pw_bridge_thread_loop_unlock(self._thread_loop)
 
         if ret < 0:
             return False

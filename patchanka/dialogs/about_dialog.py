@@ -42,7 +42,7 @@ class AboutDialog(QDialog):
         pw_version = "unknown"
         try:
             from .. import pw_bindings as pw
-            v = pw._lib_wrapper.patchanka_version()
+            v = pw._lib_wrapper.pw_bridge_version()
             if v:
                 pw_version = v.decode() if isinstance(v, bytes) else str(v)
         except Exception:
