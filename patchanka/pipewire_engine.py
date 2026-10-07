@@ -14,7 +14,7 @@ from patch_engine.jack_bases import (
 from patch_engine.patch_engine import PatchEngine
 from patch_engine.port_data import PortData, PortDataList
 
-from pw_bridge.pipewire_registry import PipeWireRegistry
+from pw_bridge.registry import PipeWireRegistry
 from pw_bridge import pw_bindings as pw
 from .houston_adapter import (
     media_class_to_port_type,
