@@ -10,15 +10,23 @@ os.environ['QT_API'] = 'pyqt6'
 
 ROOT = Path(__file__).parent
 HP_SOURCE = ROOT / "HoustonPatchbay" / "source"
+PW_BRIDGE = ROOT / "libs" / "pw-bridge"
 
 if not HP_SOURCE.is_dir():
     print(f"Error: {HP_SOURCE} not found.")
-    print("Please initialize the submodule:")
+    print("Please initialize the submodules:")
+    print("  git submodule update --init --recursive")
+    sys.exit(1)
+
+if not PW_BRIDGE.is_dir():
+    print(f"Error: {PW_BRIDGE} not found.")
+    print("Please initialize the submodules:")
     print("  git submodule update --init --recursive")
     sys.exit(1)
 
 sys.path.insert(0, str(HP_SOURCE))
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(PW_BRIDGE))
 
 from patchanka.__main__ import main
 
