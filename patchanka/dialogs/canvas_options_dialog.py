@@ -45,14 +45,14 @@ class _GeneralTab(QWidget):
         layout = QVBoxLayout(self)
 
         # --- Display ---
-        group_display = QGroupBox("Display")
+        group_display = QGroupBox(self.tr("Display"))
         display_layout = QVBoxLayout(group_display)
 
-        self._cb_shadows = QCheckBox("Box shadows")
-        self._cb_auto_select = QCheckBox("Automatic selection")
-        self._cb_elastic = QCheckBox("Elastic canvas")
-        self._cb_borders_nav = QCheckBox("Border navigation")
-        self._cb_prevent_overlap = QCheckBox("Prevent overlap")
+        self._cb_shadows = QCheckBox(self.tr("Box shadows"))
+        self._cb_auto_select = QCheckBox(self.tr("Automatic selection"))
+        self._cb_elastic = QCheckBox(self.tr("Elastic canvas"))
+        self._cb_borders_nav = QCheckBox(self.tr("Border navigation"))
+        self._cb_prevent_overlap = QCheckBox(self.tr("Prevent overlap"))
 
         try:
             opts = _get_hp_options()
@@ -82,19 +82,19 @@ class _GeneralTab(QWidget):
         pw_layout = QVBoxLayout(group_pw)
 
         self._cb_hide_monitor = QCheckBox(
-            "Hide monitoring ports (monitor_*)")
+            self.tr("Hide monitoring ports (monitor_*)"))
         self._cb_hide_monitor.setChecked(
             self._config.hide_monitor_ports)
-        self._cb_hide_monitor.setToolTip(
+        self._cb_hide_monitor.setToolTip(self.tr(
             "PipeWire automatically adds monitoring ports to nodes\n"
             "that have inputs. These ports allow capturing what\n"
-            "enters the node, but they clutter the visual patchbay.")
+            "enters the node, but they clutter the visual patchbay."))
         pw_layout.addWidget(self._cb_hide_monitor)
 
         layout.addWidget(group_pw)
 
         # --- Grid ---
-        group_grid = QGroupBox("Grid")
+        group_grid = QGroupBox(self.tr("Grid"))
         grid_layout = QFormLayout(group_grid)
 
         self._combo_grid = QComboBox()
@@ -102,10 +102,10 @@ class _GeneralTab(QWidget):
             from patchbay.patchcanvas.init_values import GridStyle
             for style in GridStyle:
                 label = {
-                    "NONE": "None",
-                    "TECHNICAL_GRID": "Technical grid",
-                    "GRID": "Grid",
-                    "CHESSBOARD": "Chessboard",
+                    "NONE": self.tr("None"),
+                    "TECHNICAL_GRID": self.tr("Technical grid"),
+                    "GRID": self.tr("Grid"),
+                    "CHESSBOARD": self.tr("Chessboard"),
                 }.get(style.name, style.name)
                 self._combo_grid.addItem(label, style)
 
@@ -119,12 +119,12 @@ class _GeneralTab(QWidget):
         except Exception:
             _logger.exception("GridStyle unavailable")
 
-        grid_layout.addRow("Style:", self._combo_grid)
+        grid_layout.addRow(self.tr("Style:"), self._combo_grid)
 
         layout.addWidget(group_grid)
 
         # --- Default zoom ---
-        group_zoom = QGroupBox("Zoom")
+        group_zoom = QGroupBox(self.tr("Zoom"))
         zoom_layout = QFormLayout(group_zoom)
 
         self._spin_zoom = QSpinBox()
@@ -136,7 +136,7 @@ class _GeneralTab(QWidget):
                 int(getattr(opts, 'default_zoom', 100)))
         except Exception:
             self._spin_zoom.setValue(100)
-        zoom_layout.addRow("Default zoom:", self._spin_zoom)
+        zoom_layout.addRow(self.tr("Default zoom:"), self._spin_zoom)
 
         layout.addWidget(group_zoom)
 
@@ -187,6 +187,7 @@ class _GeneralTab(QWidget):
         except Exception:
             _logger.exception("Failed to emit signals")
 
+
 # ======================================================================
 # Naming tab
 # ======================================================================
@@ -200,11 +201,11 @@ class _NamingTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        group_naming = QGroupBox("Name sources")
+        group_naming = QGroupBox(self.tr("Name sources"))
         naming_layout = QVBoxLayout(group_naming)
 
-        self._cb_custom = QCheckBox("Custom names")
-        self._cb_graceful = QCheckBox("Graceful names")
+        self._cb_custom = QCheckBox(self.tr("Custom names"))
+        self._cb_graceful = QCheckBox(self.tr("Graceful names"))
 
         self._cb_custom.setChecked(Naming.CUSTOM in manager.naming)
         self._cb_graceful.setChecked(
@@ -215,10 +216,10 @@ class _NamingTab(QWidget):
 
         layout.addWidget(group_naming)
 
-        note = QLabel(
+        note = QLabel(self.tr(
             "PipeWire provides the display name via node.description.\n"
             "Patchanka custom names (WirePlumber rules) take priority\n"
-            "over this name.")
+            "over this name."))
         note.setStyleSheet("color: gray; font-style: italic;")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -247,7 +248,7 @@ class _ThemeTab(QWidget):
 
         layout = QVBoxLayout(self)
 
-        group_theme = QGroupBox("Active theme")
+        group_theme = QGroupBox(self.tr("Active theme"))
         theme_layout = QVBoxLayout(group_theme)
 
         self._combo_theme = QComboBox()
@@ -256,11 +257,11 @@ class _ThemeTab(QWidget):
 
         btn_layout = QHBoxLayout()
 
-        self._btn_duplicate = QPushButton("Duplicate...")
+        self._btn_duplicate = QPushButton(self.tr("Duplicate..."))
         self._btn_duplicate.clicked.connect(self._duplicate_theme)
         btn_layout.addWidget(self._btn_duplicate)
 
-        self._btn_edit = QPushButton("Edit...")
+        self._btn_edit = QPushButton(self.tr("Edit..."))
         self._btn_edit.clicked.connect(self._edit_theme)
         btn_layout.addWidget(self._btn_edit)
 
@@ -329,8 +330,8 @@ class _ThemeTab(QWidget):
 
     def _duplicate_theme(self):
         name, ok = QInputDialog.getText(
-            self, "New theme",
-            "Name of the new theme:",
+            self, self.tr("New theme"),
+            self.tr("Name of the new theme:"),
             QLineEdit.EchoMode.Normal, "")
         if not ok or not name:
             return
@@ -340,8 +341,8 @@ class _ThemeTab(QWidget):
             err = patchcanvas.copy_and_load_current_theme(name)
             if err:
                 QMessageBox.warning(
-                    self, "Error",
-                    "Theme copy failed.")
+                    self, self.tr("Error"),
+                    self.tr("Theme copy failed."))
             else:
                 self._load_theme_list()
         except Exception:
@@ -364,6 +365,7 @@ class _ThemeTab(QWidget):
         """Nothing to do, theme change is immediate."""
         pass
 
+
 # ======================================================================
 # Main dialog
 # ======================================================================
@@ -373,7 +375,7 @@ class CanvasOptionsDialog(QDialog):
 
     def __init__(self, parent, manager):
         super().__init__(parent)
-        self.setWindowTitle("Canvas options")
+        self.setWindowTitle(self.tr("Canvas options"))
         self.setMinimumSize(550, 500)
 
         self._manager = manager
@@ -383,13 +385,13 @@ class CanvasOptionsDialog(QDialog):
         self._tabs = QTabWidget()
 
         self._tab_general = _GeneralTab(self._manager)
-        self._tabs.addTab(self._tab_general, "General")
+        self._tabs.addTab(self._tab_general, self.tr("General"))
 
         self._tab_naming = _NamingTab(self._manager)
-        self._tabs.addTab(self._tab_naming, "Naming")
+        self._tabs.addTab(self._tab_naming, self.tr("Naming"))
 
         self._tab_theme = _ThemeTab(self._manager)
-        self._tabs.addTab(self._tab_theme, "Theme")
+        self._tabs.addTab(self._tab_theme, self.tr("Theme"))
 
         layout.addWidget(self._tabs)
 

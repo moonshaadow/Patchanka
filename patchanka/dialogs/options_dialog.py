@@ -13,7 +13,7 @@ class OptionsDialog(QDialog):
 
     def __init__(self, parent, manager):
         super().__init__(parent)
-        self.setWindowTitle("Patchanka options")
+        self.setWindowTitle(self.tr("Patchanka options"))
         self.setMinimumSize(450, 300)
 
         self._manager = manager
@@ -21,9 +21,9 @@ class OptionsDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # --- Waiting message ---
-        label = QLabel(
+        label = QLabel(self.tr(
             "No options available yet.\n\n"
-            "Future options will be added here.")
+            "Future options will be added here."))
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         label.setStyleSheet("color: gray; font-style: italic;")
         layout.addStretch()

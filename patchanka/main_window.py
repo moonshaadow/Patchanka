@@ -79,33 +79,33 @@ class MainWindow(QMainWindow):
         menu = menu_bar.addMenu("\u22ef")
         menu.setToolTipsVisible(True)
 
-        action_canvas = menu.addAction("Canvas...")
+        action_canvas = menu.addAction(self.tr("Canvas..."))
         action_canvas.triggered.connect(self._show_canvas_options)
 
-        action_options = menu.addAction("Options...")
+        action_options = menu.addAction(self.tr("Options..."))
         action_options.triggered.connect(self._show_options)
 
         menu.addSeparator()
 
-        action_about = menu.addAction("About Patchanka...")
+        action_about = menu.addAction(self.tr("About Patchanka..."))
         action_about.triggered.connect(self._show_about)
 
     def _create_status_bar(self):
         """Create the status bar with the PipeWire indicator."""
         status_bar = self.statusBar()
 
-        self._status_label = QLabel("PipeWire: waiting...")
+        self._status_label = QLabel(self.tr("PipeWire: waiting..."))
         self._status_label.setStyleSheet(
             "color: #888888; padding: 2px 8px;")
         status_bar.addPermanentWidget(self._status_label)
 
     def _on_pipewire_status(self, connected: bool):
         if connected:
-            self._status_label.setText("PipeWire: Connected")
+            self._status_label.setText(self.tr("PipeWire: Connected"))
             self._status_label.setStyleSheet(
                 "color: #44aa44; padding: 2px 8px; font-weight: bold;")
         else:
-            self._status_label.setText("PipeWire: Stopped")
+            self._status_label.setText(self.tr("PipeWire: Stopped"))
             self._status_label.setStyleSheet(
                 "color: #cc4444; padding: 2px 8px; font-weight: bold;")
 

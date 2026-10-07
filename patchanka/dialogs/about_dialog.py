@@ -11,7 +11,7 @@ class AboutDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("About Patchanka")
+        self.setWindowTitle(self.tr("About Patchanka"))
         self.setMinimumWidth(450)
 
         layout = QVBoxLayout(self)
@@ -22,7 +22,7 @@ class AboutDialog(QDialog):
         layout.addWidget(title)
 
         subtitle = QLabel(
-            "PipeWire patchbay based on HoustonPatchbay")
+            self.tr("PipeWire patchbay based on HoustonPatchbay"))
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle.setStyleSheet("color: gray;")
         layout.addWidget(subtitle)
@@ -30,7 +30,7 @@ class AboutDialog(QDialog):
         layout.addSpacing(12)
 
         # --- Versions ---
-        group_versions = QGroupBox("Versions")
+        group_versions = QGroupBox(self.tr("Versions"))
         form = QFormLayout(group_versions)
 
         try:
@@ -73,14 +73,14 @@ class AboutDialog(QDialog):
         layout.addWidget(group_versions)
 
         # --- Paths ---
-        group_paths = QGroupBox("Paths")
+        group_paths = QGroupBox(self.tr("Paths"))
         paths_layout = QFormLayout(group_paths)
 
         try:
             from .. import wireplumber_rules
             wm_path = wireplumber_rules._config_file()
             paths_layout.addRow(
-                "WirePlumber rules:", QLabel(str(wm_path)))
+                self.tr("WirePlumber rules:"), QLabel(str(wm_path)))
         except Exception:
             pass
 
