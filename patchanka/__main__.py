@@ -6,6 +6,7 @@ import logging
 from qtpy.QtWidgets import QApplication
 
 from .main_window import MainWindow
+from .translation import install_translations
 
 
 def main():
@@ -16,6 +17,9 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Patchanka")
     app.setOrganizationName("Patchanka")
+
+    # Install translations BEFORE creating any widget
+    install_translations(app)
 
     window = MainWindow()
     window.show()
