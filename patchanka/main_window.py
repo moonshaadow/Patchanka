@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.manager.set_main_win(self)
 
         # HP themes paths
-        hp_root = Path(__file__).parent.parent / "HoustonPatchbay"
+        hp_root = Path(__file__).parent.parent / "libs" / "HoustonPatchbay"
         theme_paths = (hp_root / "themes",)
 
         # Canvas options and features

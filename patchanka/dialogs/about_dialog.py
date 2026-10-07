@@ -54,7 +54,7 @@ class AboutDialog(QDialog):
         try:
             from pathlib import Path
             hp_readme = (Path(__file__).parent.parent.parent
-                         / "HoustonPatchbay" / "readme.md")
+                         / "libs" / "HoustonPatchbay" / "readme.md")
             if hp_readme.is_file():
                 hp_version = "submodule"
         except Exception:

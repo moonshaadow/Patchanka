@@ -1,5 +1,5 @@
 [submodule "HoustonPatchbay"]
-	path = HoustonPatchbay
+	path = libs/HoustonPatchbay
 	url = https://codeberg.org/houston4444/HoustonPatchbay.git
 [submodule "libs/pw-bridge"]
 	path = libs/pw-bridge

@@ -9,7 +9,7 @@ from pathlib import Path
 os.environ['QT_API'] = 'pyqt6'
 
 ROOT = Path(__file__).parent
-HP_SOURCE = ROOT / "HoustonPatchbay" / "source"
+HP_SOURCE = ROOT / "libs" / "HoustonPatchbay" / "source"
 PW_BRIDGE = ROOT / "libs" / "pw-bridge"
 
 if not HP_SOURCE.is_dir():
