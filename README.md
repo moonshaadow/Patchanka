@@ -16,6 +16,7 @@ as its graphical patchbay interface.
 - Hide monitoring ports (automatically created by PipeWire)
 - Custom node names via WirePlumber Lua rules
 - Automatic reconnection when PipeWire restarts
+- Almost all good features from HoustonPatchbay, like in **Patchance** or **RaySession**
 
 ## Requirements
 
@@ -23,26 +24,14 @@ as its graphical patchbay interface.
 - PipeWire 1.0 or later
 - PyQt6
 - libpipewire-0.3
-- HoustonPatchbay (as a git submodule)
 
 ## Installation
 
-Clone the repository with its submodule:
 
-    git clone --recurse-submodules https://github.com/moonshaadow/Patchanka.git
+    git clone https://github.com/moonshaadow/Patchanka.git
     cd Patchanka
+    ./install.sh
 
-Build the C wrapper:
-
-    cd native
-    make
-    cd ..
-
-Build HoustonPatchbay resources:
-
-    cd HoustonPatchbay
-    make
-    cd ..
 
 ## Usage
 
