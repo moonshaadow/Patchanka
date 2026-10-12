@@ -1,15 +1,17 @@
 #!/bin/bash
-# install.sh - Build script for Patchanka.
+# install.sh - Build and install Patchanka.
 #
 # This script:
-#   1. Checks required tools and Python packages
-#   2. Initializes git submodules if missing
-#   3. Builds HoustonPatchbay (Qt UI files, resources, translations)
-#   4. Builds pw-bridge C wrapper
-#   5. Builds Patchanka translations (.qm files)
+#   1. Detects the distribution and required tools
+#   2. Initializes git submodules
+#   3. Builds HoustonPatchbay, pw-bridge, and translations
+#   4. Installs Patchanka in $XDG_DATA_HOME/patchanka
+#   5. Creates a launcher in ~/.local/bin
 #
 # Usage:
-#   ./install.sh
+#   ./install.sh            # build and install
+#   ./install.sh --build    # build only, no install
+#   ./install.sh --uninstall
 
 set -e
 cd "$(dirname "$0")"
@@ -30,20 +32,15 @@ section() {
     echo "======================================================"
 }
 
-ok()      { echo -e "  ${GREEN}OK${NC}   $1"; }
-warn()    { echo -e "  ${YELLOW}WARN${NC} $1"; }
-fail()    { echo -e "  ${RED}FAIL${NC} $1" >&2; }
+ok()   { echo -e "  ${GREEN}OK${NC}   $1"; }
+warn() { echo -e "  ${YELLOW}WARN${NC} $1"; }
+fail() { echo -e "  ${RED}FAIL${NC} $1" >&2; }
 
 has_cmd() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Check if a Python module is importable
-has_py_module() {
-    python3 -c "import $1" 2>/dev/null
-}
-
-# Detect the distro package manager
+# Detect distribution from /etc/os-release
 detect_distro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -53,33 +50,126 @@ detect_distro() {
     fi
 }
 
-# Print install hint based on distro
-install_hint() {
-    local pkg_debian="$1"
-    local pkg_fedora="$2"
-    local pkg_arch="$3"
+# Detect distribution family (debian, fedora, arch, suse)
+detect_distro_family() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "${ID:-}" in
+            debian|ubuntu|linuxmint|pop|elementary|zorin)
+                echo "debian" ;;
+            fedora|rhel|centos|rocky|alma)
+                echo "fedora" ;;
+            arch|manjaro|endeavouros|garuda)
+                echo "arch" ;;
+            opensuse*|sles)
+                echo "suse" ;;
+            *)
+                case "${ID_LIKE:-}" in
+                    *debian*) echo "debian" ;;
+                    *fedora*|*rhel*) echo "fedora" ;;
+                    *arch*) echo "arch" ;;
+                    *suse*) echo "suse" ;;
+                    *) echo "unknown" ;;
+                esac
+                ;;
+        esac
+    else
+        echo "unknown"
+    fi
+}
 
-    case "$(detect_distro)" in
-        debian|ubuntu|linuxmint|pop)
-            echo "  sudo apt install $pkg_debian"
+# Print install hint for a package
+install_hint() {
+    local family
+    family=$(detect_distro_family)
+
+    case "$family" in
+        debian)
+            echo "  sudo apt install $1"
             ;;
-        fedora|rhel|centos)
-            echo "  sudo dnf install $pkg_fedora"
+        fedora)
+            echo "  sudo dnf install $2"
             ;;
-        arch|manjaro)
-            echo "  sudo pacman -S $pkg_arch"
+        arch)
+            echo "  sudo pacman -S $3"
+            ;;
+        suse)
+            echo "  sudo zypper install $4"
             ;;
         *)
-            echo "  (install manually: $pkg_debian)"
+            echo "  (unknown distribution: install $1 manually)"
             ;;
     esac
 }
 
+# XDG paths with fallbacks
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+XDG_BIN_HOME="$HOME/.local/bin"
+INSTALL_DIR="$XDG_DATA_HOME/patchanka"
+LAUNCHER="$XDG_BIN_HOME/patchanka"
+
 # ----------------------------------------------------------------------
-# 1. Check required tools
+# Parse arguments
 # ----------------------------------------------------------------------
 
-section "1. Checking required tools"
+BUILD_ONLY=false
+UNINSTALL=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --build)     BUILD_ONLY=true ;;
+        --uninstall) UNINSTALL=true ;;
+        --help|-h)
+            echo "Usage: $0 [--build|--uninstall]"
+            exit 0
+            ;;
+    esac
+done
+
+# ----------------------------------------------------------------------
+# Uninstall
+# ----------------------------------------------------------------------
+
+if [ "$UNINSTALL" = true ]; then
+    section "Uninstalling Patchanka"
+
+    if [ -f "$LAUNCHER" ]; then
+        rm -f "$LAUNCHER"
+        ok "Removed launcher: $LAUNCHER"
+    else
+        warn "Launcher not found: $LAUNCHER"
+    fi
+
+    if [ -d "$INSTALL_DIR" ]; then
+        rm -rf "$INSTALL_DIR"
+        ok "Removed install directory: $INSTALL_DIR"
+    else
+        warn "Install directory not found: $INSTALL_DIR"
+    fi
+
+    echo ""
+    echo "  Patchanka has been uninstalled."
+    exit 0
+fi
+
+# ----------------------------------------------------------------------
+# 1. Detect distribution
+# ----------------------------------------------------------------------
+
+section "1. Detecting system"
+
+DISTRO=$(detect_distro)
+FAMILY=$(detect_distro_family)
+
+ok "Distribution: $DISTRO (family: $FAMILY)"
+ok "Install directory: $INSTALL_DIR"
+ok "Launcher: $LAUNCHER"
+
+# ----------------------------------------------------------------------
+# 2. Check required tools
+# ----------------------------------------------------------------------
+
+section "2. Checking required tools"
 
 MISSING_TOOLS=()
 
@@ -95,14 +185,15 @@ check_tool() {
     fi
 }
 
-check_tool "Python 3"                    "command -v python3"
-check_tool "C compiler (cc or gcc)"      "command -v cc || command -v gcc"
-check_tool "pkg-config"                  "command -v pkg-config"
-check_tool "libpipewire-0.3 (dev)"       "pkg-config --exists libpipewire-0.3"
-check_tool "pyuic6"                      "command -v pyuic6"
-check_tool "lrelease"                    "command -v lrelease || command -v lrelease-qt6"
-check_tool "pylupdate6"                  "command -v pylupdate6"
+check_tool "Python 3"              "command -v python3"
+check_tool "C compiler"            "command -v cc || command -v gcc"
+check_tool "pkg-config"            "command -v pkg-config"
+check_tool "libpipewire-0.3 (dev)" "pkg-config --exists libpipewire-0.3"
+check_tool "pyuic6"                "command -v pyuic6"
+check_tool "lrelease"              "command -v lrelease || command -v lrelease-qt6"
+check_tool "pylupdate6"            "command -v pylupdate6"
 
+# Distribution-specific package names for missing tools
 if [ ${#MISSING_TOOLS[@]} -ne 0 ]; then
     echo ""
     echo "Missing tools: ${MISSING_TOOLS[*]}"
@@ -111,15 +202,16 @@ if [ ${#MISSING_TOOLS[@]} -ne 0 ]; then
     install_hint \
         "python3 python3-pip pkg-config libpipewire-0.3-dev pyqt6-dev-tools qt6-l10n-tools" \
         "python3 pkg-config pipewire-devel python3-qt6-devel qt6-linguist" \
-        "python pkg-config pipewire python-pyqt6 qt6-tools"
+        "python pkg-config pipewire python-pyqt6 qt6-tools" \
+        "python3 pkg-config pipewire-devel python3-qt6-devel qt6-linguist"
     exit 1
 fi
 
 # ----------------------------------------------------------------------
-# 2. Check Python packages
+# 3. Check Python packages
 # ----------------------------------------------------------------------
 
-section "2. Checking Python packages"
+section "3. Checking Python packages"
 
 MISSING_MODULES=()
 
@@ -127,7 +219,7 @@ check_py_module() {
     local module="$1"
     local pkg_name="$2"
 
-    if has_py_module "$module"; then
+    if python3 -c "import $module" 2>/dev/null; then
         local version
         version=$(python3 -c "
 try:
@@ -145,6 +237,10 @@ except Exception:
 
 check_py_module "qtpy"    "qtpy"
 check_py_module "PyQt6"   "PyQt6"
+check_py_module "PyQt6.QtSvg" "PyQt6.QtSvg"
+
+# HoustonPatchbay dependencies
+check_py_module "jack"    "JACK-Client (required by HoustonPatchbay)"
 
 if [ ${#MISSING_MODULES[@]} -ne 0 ]; then
     echo ""
@@ -152,20 +248,21 @@ if [ ${#MISSING_MODULES[@]} -ne 0 ]; then
     echo ""
     echo "Prefer system packages:"
     install_hint \
-        "python3-qtpy python3-pyqt6" \
-        "python3-qtpy python3-pyqt6" \
-        "python-qtpy python-pyqt6"
+        "python3-qtpy python3-pyqt6 python3-pyqt6.qtsvg python3-jack-client" \
+        "python3-qtpy python3-pyqt6 python3-pyqt6-svg python3-jack-client" \
+        "python-qtpy python-pyqt6 python-jack-client" \
+        "python3-qtpy python3-qt6 python3-qt6-svg python3-jack-client"
     echo ""
     echo "If system packages are not available, use pip:"
-    echo "  pip install --user ${MISSING_MODULES[*]}"
+    echo "  pip install --user qtpy PyQt6 JACK-Client"
     exit 1
 fi
 
 # ----------------------------------------------------------------------
-# 3. Initialize submodules
+# 4. Initialize submodules
 # ----------------------------------------------------------------------
 
-section "3. Initializing git submodules"
+section "4. Initializing git submodules"
 
 if [ ! -d ".git" ]; then
     fail "Not a git repository"
@@ -182,10 +279,10 @@ else
 fi
 
 # ----------------------------------------------------------------------
-# 4. Build HoustonPatchbay
+# 5. Build HoustonPatchbay
 # ----------------------------------------------------------------------
 
-section "4. Building HoustonPatchbay"
+section "5. Building HoustonPatchbay"
 
 HP_DIR="libs/HoustonPatchbay"
 
@@ -195,19 +292,18 @@ if [ ! -d "$HP_DIR" ]; then
 fi
 
 if [ -f "$HP_DIR/source/patchbay/ui/canvas_options.py" ]; then
-    ok "Qt UI files already generated (skipping)"
-    echo "     To force rebuild: cd $HP_DIR && make clean && make"
+    ok "Qt UI files already generated"
 else
-    echo "  Generating Qt UI files and resources..."
+    echo "  Generating Qt UI files..."
     (cd "$HP_DIR" && make)
     ok "HoustonPatchbay built"
 fi
 
 # ----------------------------------------------------------------------
-# 5. Build pw-bridge C wrapper
+# 6. Build pw-bridge C wrapper
 # ----------------------------------------------------------------------
 
-section "5. Building pw-bridge C wrapper"
+section "6. Building pw-bridge C wrapper"
 
 PWBRIDGE_NATIVE="libs/pw-bridge/native"
 
@@ -223,36 +319,95 @@ if [ ! -f "$PWBRIDGE_NATIVE/libpw_bridge.so" ]; then
     exit 1
 fi
 
-ok "C wrapper built: $PWBRIDGE_NATIVE/libpw_bridge.so"
+ok "C wrapper built"
 
 # ----------------------------------------------------------------------
-# 6. Build Patchanka translations
+# 7. Build Patchanka translations
 # ----------------------------------------------------------------------
 
-section "6. Building Patchanka translations"
+section "7. Building Patchanka translations"
 
-if [ ! -d "patchanka/locale" ]; then
-    warn "patchanka/locale/ not found, skipping translations"
-else
+if [ -d "patchanka/locale" ]; then
     if [ ! -f "patchanka/locale/patchanka_fr.ts" ]; then
-        echo "  Creating French translation file..."
         ./scripts/create_translation.sh fr
     fi
 
     make update >/dev/null
     make compile
-
     ok "Translations built"
+else
+    warn "patchanka/locale/ not found, skipping translations"
 fi
 
 # ----------------------------------------------------------------------
-# 7. Summary
+# 8. Install (unless --build only)
+# ----------------------------------------------------------------------
+
+if [ "$BUILD_ONLY" = true ]; then
+    section "Build complete (install skipped)"
+    echo "  Run with: python3 run.py"
+    exit 0
+fi
+
+section "8. Installing Patchanka"
+
+mkdir -p "$INSTALL_DIR"
+mkdir -p "$XDG_BIN_HOME"
+
+# Copy the entire project tree (excluding git and build artifacts)
+echo "  Copying files to $INSTALL_DIR..."
+rsync -a --delete \
+    --exclude='.git' \
+    --exclude='__pycache__' \
+    --exclude='*.pyc' \
+    --exclude='*.qm' \
+    ./ "$INSTALL_DIR/"
+
+# Rebuild translations in the install directory
+(cd "$INSTALL_DIR" && make compile >/dev/null 2>&1) || true
+
+ok "Files installed to $INSTALL_DIR"
+
+# Create the launcher script
+cat > "$LAUNCHER" << EOF
+#!/bin/bash
+# Patchanka launcher
+cd "$INSTALL_DIR"
+exec python3 "$INSTALL_DIR/run.py" "\$@"
+EOF
+
+chmod +x "$LAUNCHER"
+ok "Launcher created: $LAUNCHER"
+
+# ----------------------------------------------------------------------
+# 9. Check PATH
+# ----------------------------------------------------------------------
+
+section "9. Checking PATH"
+
+if echo "$PATH" | grep -q "$XDG_BIN_HOME"; then
+    ok "$XDG_BIN_HOME is in PATH"
+else
+    warn "$XDG_BIN_HOME is not in PATH"
+    echo ""
+    echo "  Add this line to your ~/.bashrc or ~/.zshrc:"
+    echo "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+    echo ""
+    echo "  Then reload your shell:"
+    echo "    source ~/.bashrc"
+fi
+
+# ----------------------------------------------------------------------
+# Done
 # ----------------------------------------------------------------------
 
 section "Done"
 
-echo "  Patchanka is ready."
+echo "  Patchanka has been installed."
 echo ""
 echo "  Run it with:"
-echo "    python3 run.py"
+echo "    patchanka"
+echo ""
+echo "  Or directly:"
+echo "    python3 $INSTALL_DIR/run.py"
 echo ""
