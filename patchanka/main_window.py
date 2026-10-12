@@ -45,6 +45,10 @@ class MainWindow(QMainWindow):
         options = CanvasOptionsObject()
         features = CanvasFeaturesObject()
 
+        # Restore saved options (theme, grid, zoom, etc.)
+        if isinstance(self.settings, QSettings):
+            options.set_from_settings(self.settings)
+
         # Custom callbacker
         callbacker = PatchankaCallbacker(self.manager)
 

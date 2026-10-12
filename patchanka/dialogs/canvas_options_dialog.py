@@ -320,13 +320,24 @@ class _ThemeTab(QWidget):
         if not theme_ref or theme_ref == self._current_theme_ref:
             return
 
-        # Emit the theme_changed signal: the HP manager has a
-        # connected slot (PatchbayManager.change_theme) that rebuilds
-        # the canvas with the new theme.
-        # The ref_id is the folder name, which HP expects.
+        # Update HP's options object so it is persisted
+        try:
+            from patchbay.patchcanvas.init_values import (
+                options as hp_options)
+            hp_options.theme_name = theme_ref
+        except Exception:
+            _logger.exception("Failed to update theme_name")
+
+        # Emit signal so HP rebuilds the canvas
         self._mng.sg.theme_changed.emit(theme_ref)
         self._current_theme_ref = theme_ref
         self._update_edit_button()
+
+        # Persist immediately
+        try:
+            self._mng.save_settings()
+        except Exception:
+            _logger.exception("Failed to save settings")
 
     def _duplicate_theme(self):
         name, ok = QInputDialog.getText(
